@@ -13,10 +13,15 @@ Features:
 
 - API HTTP System (Default port 8000), permit to link a website or a web service like an nginx proxy in front:
   -> Permit to get the total of wallet stored inside the RPC Wallet tool.
+  
   -> Permit to get wallet address from an index selected.
+  
   -> Permit to get the current balance and pending balance from an index or a wallet address selected.
+  
   -> Permit to create a new wallet and return the wallet address created. (In case of errors after multiple retry, you can set a max keep alive argument for retry automaticaly the attempt to create a wallet until to reach it).
+  
   -> Permit to send a transaction from an index or a wallet address selected with an amount,fee, anonymous option, wallet address target selected, return the status of the transaction request(refused, accepted, busy). 
+  
   -> The RPC Wallet is setting up to allow only one attempt to send a transaction per wallets until to retrieve a response from the network.
   
 - API Encryption Key system [AES 256bit], can be set to require to encrypt GET request received and response to send.
