@@ -12,6 +12,7 @@ Features:
 - Log system, write logs.
 
 - API HTTP System (Default port 8000), permit to link a website or a web service like an nginx proxy in front:
+
   -> Permit to get the total of wallet stored inside the RPC Wallet tool.
   
   -> Permit to get wallet address from an index selected.
@@ -24,11 +25,15 @@ Features:
   
   -> The RPC Wallet is setting up to allow only one attempt to send a transaction per wallets until to retrieve a response from the network.
   
+  **-> Always return JSON string request.**
+  
 - API Encryption Key system [AES 256bit], can be set to require to encrypt GET request received and response to send.
 
 - API Whitelist, permit to accept only ip's listed, if the list is empty the API HTTP system accept every incoming connection.
 
 - Command line system:
+
   -> Permit to change the log level for see what's going on every systems one by one. 
+  
   -> Permit to create manualy a new wallet and store it inside the database encrypted.
   
