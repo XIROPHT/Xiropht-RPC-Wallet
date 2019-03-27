@@ -1,5 +1,5 @@
 # Xiropht-RPC-Wallet
-<h2>Xiropht RPC Wallet specialy made for exchanges, web wallets.</h2>
+<h2>Xiropht RPC Wallet specialy made for exchanges, web wallet.</h2>
 
 **RPC Wallet tool use the Token Network system described on the whitepaper: https://xiropht.com/document/Xiropht_Whitepaper_EN.pdf**
 
