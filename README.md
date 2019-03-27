@@ -3,6 +3,8 @@
 
 **RPC Wallet tool use the Token Network system described on the whitepaper: https://xiropht.com/document/Xiropht_Whitepaper_EN.pdf**
 
+To get more explanations, please refer to our Wiki pages: https://github.com/XIROPHT/Xiropht-RPC-Wallet/wiki
+
 Features:
 
 - Encrypted [AES 256bit] Database by password who store wallets informations.
@@ -10,6 +12,8 @@ Features:
 - Auto Update wallets balance informations. (Interval of update is set to 10 seconds, this interval can be change on the setting file).
 
 - Log system, write logs.
+
+- Remote Node Sync system, permit to sync transaction(s) of each wallets stored inside of the RPC Wallet.
 
 - API HTTP System (Default port 8000), permit to link a website or a web service like an nginx proxy in front:
 
@@ -27,13 +31,15 @@ Features:
   
   **-> Always return JSON string request.**
   
-- API Encryption Key system [AES 256bit], can be set to require to encrypt GET request received and response to send.
+- API Encryption Key option system [AES 256bit], can be set to require to encrypt GET request received and response to send.
 
 - API Whitelist, permit to accept only ip's listed, if the list is empty the API HTTP system accept every incoming connection.
+
+
 
 - Command line system:
 
   -> Permit to change the log level for see what's going on every systems one by one. 
   
   -> Permit to create manualy a new wallet and store it inside the database encrypted.
-  
+ 
