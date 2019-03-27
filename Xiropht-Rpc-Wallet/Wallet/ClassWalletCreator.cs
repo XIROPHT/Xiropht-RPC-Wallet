@@ -261,7 +261,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
             switch (splitPacket[0])
             {
                 case ClassWalletCommand.ClassWalletReceiveEnumeration.WaitingCreatePhase:
-                    //ClassConsole.ConsoleWriteLine("Please wait a moment, your wallet pending creation..", ClassConsoleEnumeration.IndexPoolConsoleYellowLog);
+                    //ClassConsole.ConsoleWriteLine("Please wait a moment, your wallet pending creation..", ClassConsoleEnumeration.IndexConsoleYellowLog);
                     break;
                 case ClassWalletCommand.ClassWalletReceiveEnumeration.WalletCreatePasswordNeedLetters:
                 case ClassWalletCommand.ClassWalletReceiveEnumeration.WalletCreatePasswordNeedMoreCharacters:
@@ -292,7 +292,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                             var publicKey = splitDecryptWalletDataCreate[2];
                             var privateKey = splitDecryptWalletDataCreate[3];
                             WalletAddressResult = walletAddress;
-                            ClassRpcDatabase.InsertNewWallet(walletAddress, publicKey, privateKey, pinWallet, WalletPassword);
+                            ClassRpcDatabase.InsertNewWalletAsync(walletAddress, publicKey, privateKey, pinWallet, WalletPassword);
                             WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorSuccess;
                             FullDisconnection();
                         }

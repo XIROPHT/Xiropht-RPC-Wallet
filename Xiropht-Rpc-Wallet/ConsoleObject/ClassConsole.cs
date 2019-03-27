@@ -4,14 +4,14 @@ using Xiropht_Rpc_Wallet.Log;
 namespace Xiropht_Rpc_Wallet.ConsoleObject
 {
 
-    public class ClassConsoleEnumeration
+    public class ClassConsoleColorEnumeration
     {
-        public const int IndexPoolConsoleGreenLog = 0;
-        public const int IndexPoolConsoleYellowLog = 1;
-        public const int IndexPoolConsoleRedLog = 2;
-        public const int IndexPoolConsoleWhiteLog = 3;
-        public const int IndexPoolConsoleBlueLog = 4;
-        public const int IndexPoolConsoleMagentaLog = 5;
+        public const int IndexConsoleGreenLog = 0;
+        public const int IndexConsoleYellowLog = 1;
+        public const int IndexConsoleRedLog = 2;
+        public const int IndexConsoleWhiteLog = 3;
+        public const int IndexConsoleBlueLog = 4;
+        public const int IndexConsoleMagentaLog = 5;
     }
 
     public class ClassConsoleLogLevelEnumeration
@@ -19,10 +19,14 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
         public const int LogLevelGeneral = 0;
         public const int LogLevelWalletObject = 1;
         public const int LogLevelApi = 2;
+        public const int LogLevelSyncDatabase = 3;
+        public const int LogLevelRemoteNodeSync = 4;
     }
 
     public class ClassConsole
     {
+        public const int MaxLogLevel = 4;
+
         /// <summary>
         /// Log on the console.
         /// </summary>
@@ -37,22 +41,22 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
             {
                 switch (colorId)
                 {
-                    case ClassConsoleEnumeration.IndexPoolConsoleGreenLog:
+                    case ClassConsoleColorEnumeration.IndexConsoleGreenLog:
                         Console.ForegroundColor = ConsoleColor.Green;
                         break;
-                    case ClassConsoleEnumeration.IndexPoolConsoleYellowLog:
+                    case ClassConsoleColorEnumeration.IndexConsoleYellowLog:
                         Console.ForegroundColor = ConsoleColor.Yellow;
                         break;
-                    case ClassConsoleEnumeration.IndexPoolConsoleRedLog:
+                    case ClassConsoleColorEnumeration.IndexConsoleRedLog:
                         Console.ForegroundColor = ConsoleColor.Red;
                         break;
-                    case ClassConsoleEnumeration.IndexPoolConsoleBlueLog:
+                    case ClassConsoleColorEnumeration.IndexConsoleBlueLog:
                         Console.ForegroundColor = ConsoleColor.Blue;
                         break;
-                    case ClassConsoleEnumeration.IndexPoolConsoleMagentaLog:
+                    case ClassConsoleColorEnumeration.IndexConsoleMagentaLog:
                         Console.ForegroundColor = ConsoleColor.Magenta;
                         break;
-                    case ClassConsoleEnumeration.IndexPoolConsoleWhiteLog:
+                    case ClassConsoleColorEnumeration.IndexConsoleWhiteLog:
                     default:
                         Console.ForegroundColor = ConsoleColor.White;
                         break;

@@ -53,7 +53,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="Xiropht-Connector-All">
-      <HintPath>..\..\Xiropht-Connector-All\Xiropht-Connector-All\bin\Debug\Xiropht-Connector-All.dll</HintPath>
+      <HintPath>..\..\Xiropht-Connector-All\Xiropht-Connector-All\bin\Release\Xiropht-Connector-All.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -61,7 +61,10 @@
     <Compile Include="ConsoleObject\ClassConsoleCommandLine.cs" />
     <Compile Include="Database\ClassRpcDatabase.cs" />
     <Compile Include="Log\ClassLog.cs" />
+    <Compile Include="Remote\ClassRemoteSync.cs" />
+    <Compile Include="Remote\ClassSortingTransaction.cs" />
     <Compile Include="Setting\ClassRpcSetting.cs" />
+    <Compile Include="Database\ClassSyncDatabase.cs" />
     <Compile Include="Threading\PriorityScheduler.cs" />
     <Compile Include="Utility\ClassUtility.cs" />
     <Compile Include="Wallet\ClassWalletCreator.cs" />
@@ -78,5 +81,6 @@
   <ItemGroup>
     <Content Include="logo-web-profil.ico" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

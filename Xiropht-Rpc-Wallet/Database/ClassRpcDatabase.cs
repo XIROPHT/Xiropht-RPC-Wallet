@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Xiropht_Connector_All.Utils;
 using Xiropht_Connector_All.Wallet;
 using Xiropht_Rpc_Wallet.ConsoleObject;
+using Xiropht_Rpc_Wallet.Threading;
 using Xiropht_Rpc_Wallet.Utility;
 using Xiropht_Rpc_Wallet.Wallet;
 
@@ -21,6 +24,7 @@ namespace Xiropht_Rpc_Wallet.Database
         private const string RpcDatabaseFile = "\\rpcdata.xirdb"; // Content every wallet informations.
         public static Dictionary<string, ClassWalletObject> RpcDatabaseContent; // Content every wallets (wallet address and public key only)
         private static StreamWriter RpcDatabaseStreamWriter; // Permit to keep alive a stream writer for write a new wallet information created.
+        public static bool InSave;
 
         /// <summary>
         /// Set rpc database password.
@@ -42,7 +46,7 @@ namespace Xiropht_Rpc_Wallet.Database
             {
                 if (File.Exists(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcDatabaseFile)))
                 {
-                    using (FileStream fs = File.Open(Directory.GetCurrentDirectory() + RpcDatabaseFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (FileStream fs = File.Open(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcDatabaseFile), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
                         using (BufferedStream bs = new BufferedStream(fs))
                         {
@@ -64,7 +68,7 @@ namespace Xiropht_Rpc_Wallet.Database
                                             if (!RpcDatabaseContent.ContainsKey(walletAddress))
                                             {
                                                 var walletPublicKey = splitWalletData[1];
-                                                var walletObject = new ClassWalletObject(walletAddress, walletPublicKey);
+                                                var walletObject = new ClassWalletObject(walletAddress, walletPublicKey, line.Replace(ClassRpcDatabaseEnumeration.DatabaseWalletStartLine, ""));
                                                 RpcDatabaseContent.Add(walletAddress, walletObject);
                                             }
                                         }
@@ -88,7 +92,7 @@ namespace Xiropht_Rpc_Wallet.Database
             {
                 return false;
             }
-            RpcDatabaseStreamWriter = new StreamWriter(Directory.GetCurrentDirectory() + RpcDatabaseFile, true, Encoding.UTF8, 8192) { AutoFlush = true };
+            RpcDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
             return true;
         }
 
@@ -100,20 +104,30 @@ namespace Xiropht_Rpc_Wallet.Database
         /// <param name="walletPrivateKey"></param>
         /// <param name="walletPinCode"></param>
         /// <param name="walletPassword"></param>
-        public static void InsertNewWallet(string walletAddress, string walletPublicKey, string walletPrivateKey, string walletPinCode, string walletPassword)
+        public static async void InsertNewWalletAsync(string walletAddress, string walletPublicKey, string walletPrivateKey, string walletPinCode, string walletPassword)
         {
-            var walletObject = new ClassWalletObject(walletAddress, walletPublicKey);
-            RpcDatabaseContent.Add(walletAddress, walletObject);
-            try
+            await Task.Factory.StartNew(delegate
             {
-                string encryptedWallet = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, walletAddress + "|" + walletPublicKey + "|" + walletPrivateKey + "|" + walletPinCode + "|" + walletPassword, RpcDatabasePassword, ClassWalletNetworkSetting.KeySize);
-                RpcDatabaseStreamWriter.WriteLine(ClassRpcDatabaseEnumeration.DatabaseWalletStartLine + encryptedWallet);
-            }
-            catch
-            {
-                RpcDatabaseStreamWriter = new StreamWriter(Directory.GetCurrentDirectory() + RpcDatabaseFile, true, Encoding.UTF8, 8192) { AutoFlush = true };
+                InSave = true;
+                bool success = false;
+                while (!success)
+                {
+                    try
+                    {
+                        string encryptedWallet = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, walletAddress + "|" + walletPublicKey + "|" + walletPrivateKey + "|" + walletPinCode + "|" + walletPassword, RpcDatabasePassword, ClassWalletNetworkSetting.KeySize);
+                        RpcDatabaseStreamWriter.WriteLine(ClassRpcDatabaseEnumeration.DatabaseWalletStartLine + encryptedWallet);
+                        var walletObject = new ClassWalletObject(walletAddress, walletPublicKey, encryptedWallet);
+                        RpcDatabaseContent.Add(walletAddress, walletObject);
+                        success = true;
+                    }
+                    catch
+                    {
+                        RpcDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
 
-            }
+                    }
+                }
+                InSave = false;
+            }, CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest);
         }
     }
 }

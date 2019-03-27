@@ -25,10 +25,18 @@ namespace Xiropht_Rpc_Wallet.API
         public const string GetWalletAddressByIndex = "get_wallet_address_by_index"; // Get a wallet address by an index selected.
         public const string GetWalletBalanceByIndex = "get_wallet_balance_by_index"; // Get a wallet balance and pending balance by an index selected.
         public const string GetWalletBalanceByWalletAddress = "get_wallet_balance_by_wallet_address"; // Get a wallet balance and pending balance by an wallet address selected.
+        public const string GetWalletTotalTransactionByIndex = "get_wallet_total_transaction_by_index"; // Get the total transaction sync from an index selected.
+        public const string GetWalletTotalAnonymousTransactionByIndex = "get_total_anonymous_transaction_by_index"; // Get the total anonymous transaction sync from an index selected.
+        public const string GetWalletTotalTransactionByWalletAddress = "get_wallet_total_transaction_by_wallet_address"; // Get the total transaction sync from an wallet address selected.
+        public const string GetWalletTotalAnonymousTransactionByWalletAddress = "get_total_anonymous_transaction_by_wallet_address"; // Get the total anonymous transaction sync from an wallet address selected.
+        public const string GetWalletTransaction = "get_wallet_transaction"; // Get a selected transaction by an index selected and a wallet address selected.
+        public const string GetWalletAnonymousTransaction = "get_wallet_anonymous_transaction"; // Get a selected anonymous transaction by an index selected and a wallet address selected.
         public const string SendTransactionByWalletAddress = "send_transaction_by_wallet_address"; // Sent a transaction from a selected wallet address.
         public const string CreateWallet = "create_wallet"; // Create a new wallet, return wallet address.
         public const string CreateWalletError = "create_wallet_error"; // Return an error pending to create a wallet.
         public const string PacketNotExist = "not_exist";
+        public const string WalletNotExist = "wallet_not_exist";
+        public const string IndexNotExist = "index_not_exist";
     }
 
     public class ClassApi
@@ -61,7 +69,6 @@ namespace Xiropht_Rpc_Wallet.API
                     {
                         var client = await ListenerApiHttpConnection.AcceptTcpClientAsync();
                         var ip = ((IPEndPoint)(client.Client.RemoteEndPoint)).Address.ToString();
-
                         await Task.Factory.StartNew(async () =>
                         {
                             using (var clientApiHttpObject = new ClassClientApiHttpObject(client, ip))
@@ -160,6 +167,7 @@ namespace Xiropht_Rpc_Wallet.API
             {
                 if (!ClassRpcSetting.RpcWalletApiIpWhitelist.Contains(_ip))
                 {
+                    ClassConsole.ConsoleWriteLine(_ip + " is not whitelisted.", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
                     isWhitelisted = false;
                 }
             }
@@ -196,11 +204,18 @@ namespace Xiropht_Rpc_Wallet.API
                                     packet = ClassUtility.GetStringBetween(packet, "GET /", "HTTP");
                                     packet = packet.Replace("%7C", "|"); // Translate special character | 
                                     packet = packet.Replace(" ", ""); // Remove empty,space characters
+                                    ClassConsole.ConsoleWriteLine("HTTP API - packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
                                     if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
                                     {
                                         packet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, packet, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                        if (packet == ClassAlgoErrorEnumeration.AlgoError)
+                                        {
+                                            ClassConsole.ConsoleWriteLine("HTTP API - wrong packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
+                                            break;
+                                        }
+                                        ClassConsole.ConsoleWriteLine("HTTP API - decrypted packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
                                     }
-                                    ClassConsole.ConsoleWriteLine("HTTP API - packet received from IP: " + _ip + " - " + packet, ClassConsoleEnumeration.IndexPoolConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
+
                                     await HandlePacketHttpAsync(packet);
                                     break;
                                 }
@@ -216,7 +231,7 @@ namespace Xiropht_Rpc_Wallet.API
                         }
                         catch (Exception error)
                         {
-                            ClassConsole.ConsoleWriteLine("HTTP API - exception error: " + error.Message, ClassConsoleEnumeration.IndexPoolConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
+                            ClassConsole.ConsoleWriteLine("HTTP API - exception error: " + error.Message, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
                             break;
                         }
                     }
@@ -224,9 +239,8 @@ namespace Xiropht_Rpc_Wallet.API
                 catch
                 {
                 }
-
-                CloseClientConnection();
             }
+            CloseClientConnection();
         }
 
         /// <summary>
@@ -244,7 +258,7 @@ namespace Xiropht_Rpc_Wallet.API
                         if (packetEach.ToLower().Contains("x-forwarded-for: "))
                         {
                             _ip = packetEach.ToLower().Replace("x-forwarded-for: ", "");
-                            ClassConsole.ConsoleWriteLine("HTTP/HTTPS API - X-Forwarded-For ip of the client is: " + _ip, ClassConsoleEnumeration.IndexPoolConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
+                            ClassConsole.ConsoleWriteLine("HTTP/HTTPS API - X-Forwarded-For ip of the client is: " + _ip, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
                             if (ClassRpcSetting.RpcWalletApiIpWhitelist.Count > 0)
                             {
                                 if (!ClassRpcSetting.RpcWalletApiIpWhitelist.Contains(_ip))
@@ -299,7 +313,7 @@ namespace Xiropht_Rpc_Wallet.API
                         }
                         else
                         {
-                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.PacketNotExist);
+                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.WalletNotExist);
                         }
                         break;
                     case ClassApiEnumeration.GetWalletBalanceByIndex:
@@ -324,7 +338,7 @@ namespace Xiropht_Rpc_Wallet.API
                         }
                         else
                         {
-                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.PacketNotExist);
+                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.WalletNotExist);
                         }
                         break;
                     case ClassApiEnumeration.GetWalletBalanceByWalletAddress:
@@ -340,7 +354,7 @@ namespace Xiropht_Rpc_Wallet.API
                         }
                         else
                         {
-                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.PacketNotExist);
+                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.WalletNotExist);
                         }
                         break;
                     case ClassApiEnumeration.SendTransactionByWalletAddress:
@@ -381,7 +395,7 @@ namespace Xiropht_Rpc_Wallet.API
                                     {
                                         if (!await walletCreatorObject.StartWalletConnectionAsync(ClassWalletPhase.Create, ClassUtility.MakeRandomWalletPassword()))
                                         {
-                                            ClassConsole.ConsoleWriteLine("RPC Wallet cannot create a new wallet.", ClassConsoleEnumeration.IndexPoolConsoleRedLog, Program.LogLevel);
+                                            ClassConsole.ConsoleWriteLine("RPC Wallet cannot create a new wallet.", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
                                         }
                                     }).ConfigureAwait(false);
 
@@ -406,7 +420,191 @@ namespace Xiropht_Rpc_Wallet.API
                         }
                         else
                         {
-                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.PacketNotExist);
+                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.CreateWalletError);
+                        }
+                        break;
+                    case ClassApiEnumeration.GetWalletTotalTransactionByIndex:
+                        if (int.TryParse(splitPacket[1], out var walletIndex3))
+                        {
+                            int counter = 0;
+                            foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent)
+                            {
+                                counter++;
+                                if (counter == walletIndex3)
+                                {
+                                    Dictionary<string, string> walletTotalTransactionContent = new Dictionary<string, string>()
+                                        {
+                                            {"wallet_address", walletObject.Key },
+                                            {"wallet_total_transaction", ""+ walletObject.Value.GetWalletTotalTransactionSync() }
+                                        };
+                                    await BuildAndSendHttpPacketAsync(null, true, walletTotalTransactionContent);
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.WalletNotExist);
+                        }
+                        break;
+                    case ClassApiEnumeration.GetWalletTotalAnonymousTransactionByIndex:
+                        if (int.TryParse(splitPacket[1], out var walletIndex4))
+                        {
+                            int counter = 0;
+                            foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent)
+                            {
+                                counter++;
+                                if (counter == walletIndex4)
+                                {
+                                    Dictionary<string, string> walletTotalAnonymousTransactionContent = new Dictionary<string, string>()
+                                        {
+                                            {"wallet_address", walletObject.Key },
+                                            {"wallet_total_anonymous_transaction", ""+ walletObject.Value.GetWalletTotalAnonymousTransactionSync() }
+                                        };
+                                    await BuildAndSendHttpPacketAsync(null, true, walletTotalAnonymousTransactionContent);
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.WalletNotExist);
+                        }
+                        break;
+                    case ClassApiEnumeration.GetWalletTotalTransactionByWalletAddress:
+                        if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(splitPacket[1]))
+                        {
+                            Dictionary<string, string> walletTotalTransactionContent = new Dictionary<string, string>()
+                            {
+                                            {"wallet_address", splitPacket[1] },
+                                            {"wallet_total_transaction", ""+ ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletTotalTransactionSync() }
+                            };
+                            await BuildAndSendHttpPacketAsync(null, true, walletTotalTransactionContent);
+                        }
+                        else
+                        {
+                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.WalletNotExist);
+                        }
+                        break;
+                    case ClassApiEnumeration.GetWalletTotalAnonymousTransactionByWalletAddress:
+                        if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(splitPacket[1]))
+                        {
+                            Dictionary<string, string> walletTotalAnonymousTransactionContent = new Dictionary<string, string>()
+                            {
+                                            {"wallet_address", splitPacket[1] },
+                                            {"wallet_total_anonymous_transaction", ""+ ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletTotalAnonymousTransactionSync() }
+                            };
+                            await BuildAndSendHttpPacketAsync(null, true, walletTotalAnonymousTransactionContent);
+                        }
+                        else
+                        {
+                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.WalletNotExist);
+                        }
+                        break;
+                    case ClassApiEnumeration.GetWalletTransaction:
+                        if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(splitPacket[1]))
+                        {
+                            if (int.TryParse(splitPacket[2], out var transactionIndex))
+                            {
+                                if (transactionIndex == 0)
+                                {
+                                    transactionIndex++;
+                                }
+                                string transaction = ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletTransactionSyncByIndex(transactionIndex);
+                                if (transaction != null)
+                                {
+                                    var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
+                                    var type = splitTransaction[1];
+                                    var hash = splitTransaction[2];
+                                    var walletDst = splitTransaction[3];
+                                    var amount = splitTransaction[4];
+                                    var fee = splitTransaction[5];
+                                    var timestampSend = splitTransaction[6];
+                                    var timestampRecv = splitTransaction[7];
+                                    var blockchainHeight = splitTransaction[8];
+
+                                    Dictionary<string, string> walletTransactionContent = new Dictionary<string, string>()
+                                    {
+                                        {"index", "" + transactionIndex },
+                                        {"type", splitTransaction[0] },
+                                        {"mode", type },
+                                        {"hash", hash },
+                                        {"wallet_dst_or_src", walletDst },
+                                        {"amount", amount },
+                                        {"fee", fee },
+                                        {"timestamp_send", timestampSend },
+                                        {"timestamp_recv", timestampRecv },
+                                        {"blockchain_height", blockchainHeight }
+
+                                    };
+                                    await BuildAndSendHttpPacketAsync(null, true, walletTransactionContent);
+                                }
+                                else
+                                {
+                                    await BuildAndSendHttpPacketAsync(ClassApiEnumeration.IndexNotExist);
+                                }
+                            }
+                            else
+                            {
+                                await BuildAndSendHttpPacketAsync(ClassApiEnumeration.IndexNotExist);
+                            }
+                        }
+                        else
+                        {
+                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.WalletNotExist);
+                        }
+                        break;
+                    case ClassApiEnumeration.GetWalletAnonymousTransaction:
+                        if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(splitPacket[1]))
+                        {
+                            if (int.TryParse(splitPacket[2], out var transactionIndex))
+                            {
+                                if (transactionIndex == 0)
+                                {
+                                    transactionIndex++;
+                                }
+                                string transaction = ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletAnonymousTransactionSyncByIndex(transactionIndex);
+                                if (transaction != null)
+                                {
+                                    var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
+                                    var type = splitTransaction[1];
+                                    var hash = splitTransaction[2];
+                                    var walletDst = splitTransaction[3];
+                                    var amount = splitTransaction[4];
+                                    var fee = splitTransaction[5];
+                                    var timestampSend = splitTransaction[6];
+                                    var timestampRecv = splitTransaction[7];
+                                    var blockchainHeight = splitTransaction[8];
+
+                                    Dictionary<string, string> walletAnonymousTransactionContent = new Dictionary<string, string>()
+                                    {
+                                        {"index", "" + transactionIndex },
+                                        {"type", splitTransaction[0]  },
+                                        {"mode", type },
+                                        {"hash", hash },
+                                        {"wallet_dst_or_src", walletDst },
+                                        {"amount", amount },
+                                        {"fee", fee },
+                                        {"timestamp_send", timestampSend },
+                                        {"timestamp_recv", timestampRecv },
+                                        {"blockchain_height", blockchainHeight }
+
+                                    };
+                                    await BuildAndSendHttpPacketAsync(null, true, walletAnonymousTransactionContent);
+                                }
+                                else
+                                {
+                                    await BuildAndSendHttpPacketAsync(ClassApiEnumeration.IndexNotExist);
+                                }
+                            }
+                            else
+                            {
+                                await BuildAndSendHttpPacketAsync(ClassApiEnumeration.IndexNotExist);
+                            }
+                        }
+                        else
+                        {
+                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.WalletNotExist);
                         }
                         break;
                     default:
@@ -424,13 +622,13 @@ namespace Xiropht_Rpc_Wallet.API
                     case ClassApiEnumeration.CreateWallet:
                         using (var walletCreatorObject = new ClassWalletCreator())
                         {
-                            await Task.Run(async delegate
+                            await Task.Factory.StartNew(async delegate
                             {
                                 if (!await walletCreatorObject.StartWalletConnectionAsync(ClassWalletPhase.Create, ClassUtility.MakeRandomWalletPassword()))
                                 {
-                                    ClassConsole.ConsoleWriteLine("RPC Wallet cannot create a new wallet.", ClassConsoleEnumeration.IndexPoolConsoleRedLog, Program.LogLevel);
+                                    ClassConsole.ConsoleWriteLine("RPC Wallet cannot create a new wallet.", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
                                 }
-                            }).ConfigureAwait(false);
+                            }, CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
 
                             while (walletCreatorObject.WalletCreateResult == ClassWalletCreatorEnumeration.WalletCreatorPending)
                             {
@@ -495,10 +693,11 @@ namespace Xiropht_Rpc_Wallet.API
         private string BuildJsonString(string content)
         {
             JObject jsonContent = new JObject
-                {
-                    { "result", content },
-                    { "version", Assembly.GetExecutingAssembly().GetName().Version.ToString() }
-                };
+            {
+                { "result", content },
+                { "version", Assembly.GetExecutingAssembly().GetName().Version.ToString() },
+                { "date_packet", DateTimeOffset.Now.ToUnixTimeSeconds() }
+            };
             return JsonConvert.SerializeObject(jsonContent);
         }
 
@@ -515,6 +714,7 @@ namespace Xiropht_Rpc_Wallet.API
                 jsonContent.Add(content.Key, content.Value);
             }
             jsonContent.Add("version", Assembly.GetExecutingAssembly().GetName().Version.ToString());
+            jsonContent.Add("date_packet", DateTimeOffset.Now.ToUnixTimeSeconds());
             return JsonConvert.SerializeObject(jsonContent);
         }
 

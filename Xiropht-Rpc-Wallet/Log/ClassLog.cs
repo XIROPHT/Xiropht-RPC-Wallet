@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,7 +14,8 @@ namespace Xiropht_Rpc_Wallet.Log
         public const int LogIndexGeneral = 0;
         public const int LogIndexWalletUpdater = 1;
         public const int LogIndexApi = 2;
-
+        public const int LogIndexSync = 3;
+        public const int LogIndexRemoteNodeSync = 4;
     }
 
 
@@ -32,6 +32,8 @@ namespace Xiropht_Rpc_Wallet.Log
         private const string LogGeneral = "\\Log\\rpc-general.log"; // 0
         private const string LogWalletUpdater = "\\Log\\rpc-wallet-updater.log"; // 1
         private const string LogApi = "\\Log\\rpc-api.log"; // 2
+        private const string LogSync = "\\Log\\rpc-sync.log"; // 3
+        private const string LogRemoteNodeSync = "\\Log\\rpc-remote-node-sync.log"; // 4
 
         /// <summary>
         /// Streamwriter's 
@@ -39,6 +41,8 @@ namespace Xiropht_Rpc_Wallet.Log
         private static StreamWriter LogGeneralStreamWriter;
         private static StreamWriter LogWalletUpdaterStreamWriter;
         private static StreamWriter LogApiStreamWriter;
+        private static StreamWriter LogSyncStreamWriter;
+        private static StreamWriter LogRemoteNodeSyncStreamWriter;
 
         /// <summary>
         /// Contains logs to write.
@@ -68,7 +72,7 @@ namespace Xiropht_Rpc_Wallet.Log
             }
             catch (Exception error)
             {
-                ClassConsole.ConsoleWriteLine("Failed to initialize log system, exception error: " + error.Message, ClassConsoleEnumeration.IndexPoolConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
+                ClassConsole.ConsoleWriteLine("Failed to initialize log system, exception error: " + error.Message, ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
                 return false;
             }
             return true;
@@ -103,6 +107,18 @@ namespace Xiropht_Rpc_Wallet.Log
                 return false;
             }
 
+            if (!File.Exists(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + LogSync)))
+            {
+                File.Create(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + LogSync)).Close();
+                return false;
+            }
+
+            if (!File.Exists(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + LogRemoteNodeSync)))
+            {
+                File.Create(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + LogRemoteNodeSync)).Close();
+                return false;
+            }
+
             return true;
         }
 
@@ -114,11 +130,16 @@ namespace Xiropht_Rpc_Wallet.Log
             LogApiStreamWriter?.Close();
             LogGeneralStreamWriter?.Close();
             LogWalletUpdaterStreamWriter?.Close();
+            LogSyncStreamWriter?.Close();
+            LogRemoteNodeSyncStreamWriter?.Close();
 
 
             LogGeneralStreamWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + LogGeneral), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
             LogWalletUpdaterStreamWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + LogWalletUpdater), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
             LogApiStreamWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + LogApi), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            LogSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + LogSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            LogRemoteNodeSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + LogRemoteNodeSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+
         }
 
         /// <summary>
@@ -143,9 +164,14 @@ namespace Xiropht_Rpc_Wallet.Log
         /// </summary>
         private static void AutoWriteLog()
         {
+            if (ThreadAutoWriteLog != null && (ThreadAutoWriteLog.IsAlive || ThreadAutoWriteLog != null))
+            {
+                ThreadAutoWriteLog.Abort();
+                GC.SuppressFinalize(ThreadAutoWriteLog);
+            }
             ThreadAutoWriteLog = new Thread(async delegate ()
             {
-                while (true)
+                while (!Program.Exit)
                 {
                     try
                     {
@@ -205,7 +231,30 @@ namespace Xiropht_Rpc_Wallet.Log
                 case ClassLogEnumeration.LogIndexApi:
                     await LogApiStreamWriter.WriteLineAsync(text);
                     break;
+                case ClassLogEnumeration.LogIndexSync:
+                    await LogApiStreamWriter.WriteLineAsync(text);
+                    break;
+                case ClassLogEnumeration.LogIndexRemoteNodeSync:
+                    await LogApiStreamWriter.WriteLineAsync(text);
+                    break;
             }
+        }
+
+        /// <summary>
+        /// Stop log system.
+        /// </summary>
+        public static void StopLogSystem()
+        {
+            if (ThreadAutoWriteLog != null && (ThreadAutoWriteLog.IsAlive || ThreadAutoWriteLog != null))
+            {
+                ThreadAutoWriteLog.Abort();
+                GC.SuppressFinalize(ThreadAutoWriteLog);
+            }
+            LogApiStreamWriter?.Close();
+            LogGeneralStreamWriter?.Close();
+            LogWalletUpdaterStreamWriter?.Close();
+            LogSyncStreamWriter?.Close();
+            LogRemoteNodeSyncStreamWriter?.Close();
         }
     }
 }
