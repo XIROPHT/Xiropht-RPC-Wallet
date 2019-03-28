@@ -22,7 +22,6 @@ namespace Xiropht_Rpc_Wallet.Remote
         private static Thread ThreadAutoSync;
         private static bool ConnectionStatus;
         private static bool EnableCheckConnectionStatus;
-        private const int MaxTimeout = 30;
 
         /// <summary>
         /// Current wallet to sync.
@@ -45,11 +44,6 @@ namespace Xiropht_Rpc_Wallet.Remote
         /// Check if the current wait a transaction.
         /// </summary>
         private static bool CurrentWalletOnSyncTransaction;
-
-        /// <summary>
-        /// Save last packet received date.
-        /// </summary>
-        private static long LastPacketReceived;
 
 
         /// <summary>
@@ -78,7 +72,6 @@ namespace Xiropht_Rpc_Wallet.Remote
             if (ConnectionStatus)
             {
                 ClassConsole.ConsoleWriteLine("Connect to Remote Node host " + ClassRpcSetting.RpcWalletRemoteNodeHost + ":" + ClassRpcSetting.RpcWalletRemoteNodePort + " successfully done, start to sync.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
 
                 if (!EnableCheckConnectionStatus)
                 {
@@ -144,7 +137,6 @@ namespace Xiropht_Rpc_Wallet.Remote
                             int received = await networkReader.ReadAsync(buffer, 0, buffer.Length);
                             if (received > 0)
                             {
-                                LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
                                 string packetReceived = Encoding.UTF8.GetString(buffer, 0, received);
                                 if (packetReceived.Contains("*"))
                                 {
@@ -236,34 +228,23 @@ namespace Xiropht_Rpc_Wallet.Remote
             }
             ThreadRemoteNodeCheckConnection = new Thread(async delegate ()
             {
-                while(!Program.Exit)
+                while(true)
                 {
-                    try
+                    if (!ConnectionStatus)
                     {
-                        if (!ConnectionStatus || LastPacketReceived + MaxTimeout < DateTimeOffset.Now.ToUnixTimeSeconds())
+                        if (ThreadRemoteNodeListen != null && (ThreadRemoteNodeListen.IsAlive || ThreadRemoteNodeListen != null))
                         {
-                            ConnectionStatus = false;
-                            LastPacketReceived = 0;
-                            Thread.Sleep(100);
-                            if (ThreadRemoteNodeListen != null && (ThreadRemoteNodeListen.IsAlive || ThreadRemoteNodeListen != null))
-                            {
-                                ThreadRemoteNodeListen.Abort();
-                                GC.SuppressFinalize(ThreadRemoteNodeListen);
-                            }
-                            if (ThreadAutoSync != null && (ThreadAutoSync.IsAlive || ThreadAutoSync != null))
-                            {
-                                ThreadAutoSync.Abort();
-                                GC.SuppressFinalize(ThreadAutoSync);
-                            }
-                            Thread.Sleep(1000);
-                            ClassConsole.ConsoleWriteLine("Connection to remote node host is closed, retry to connect", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                            await ConnectRpcWalletToSyncAsync();
+                            ThreadRemoteNodeListen.Abort();
+                            GC.SuppressFinalize(ThreadRemoteNodeListen);
                         }
-                    }
-                    catch
-                    {
-                        ConnectionStatus = false;
-                        LastPacketReceived = 0;
+                        if (ThreadAutoSync != null && (ThreadAutoSync.IsAlive || ThreadAutoSync != null))
+                        {
+                            ThreadAutoSync.Abort();
+                            GC.SuppressFinalize(ThreadAutoSync);
+                        }
+                        Thread.Sleep(1000);
+                        ClassConsole.ConsoleWriteLine("Connection to remote node host is closed, retry to connect", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
+                        await ConnectRpcWalletToSyncAsync();
                     }
                     Thread.Sleep(1000);
                 }

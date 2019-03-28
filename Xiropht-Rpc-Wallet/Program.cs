@@ -53,7 +53,7 @@ namespace Xiropht_Rpc_Wallet
                         if (ClassRpcSetting.RpcWalletEnableRemoteNodeSync && ClassRpcSetting.RpcWalletRemoteNodeHost != string.Empty && ClassRpcSetting.RpcWalletRemoteNodePort != 0)
                         {
                             ClassConsole.ConsoleWriteLine("RPC Remote Node Sync system loading..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
-                            new Thread(async () => await ClassRemoteSync.ConnectRpcWalletToSyncAsync()).Start();
+                            ClassRemoteSync.ConnectRpcWalletToSyncAsync();
                         }
                         ClassConsole.ConsoleWriteLine("Enable Command Line system.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
                         ClassConsoleCommandLine.EnableConsoleCommandLine();
