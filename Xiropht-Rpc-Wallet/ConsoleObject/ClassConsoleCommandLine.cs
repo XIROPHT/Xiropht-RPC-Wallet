@@ -119,6 +119,7 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                                 ClassLog.StopLogSystem();
                                 Console.ReadLine();
                                 Program.Exit = true;
+                                Environment.Exit(0);
                                 break;
                         }
                         if (Program.Exit)

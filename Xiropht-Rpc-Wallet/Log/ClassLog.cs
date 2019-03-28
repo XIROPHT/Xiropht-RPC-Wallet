@@ -235,7 +235,7 @@ namespace Xiropht_Rpc_Wallet.Log
                     await LogApiStreamWriter.WriteLineAsync(text);
                     break;
                 case ClassLogEnumeration.LogIndexRemoteNodeSync:
-                    await LogApiStreamWriter.WriteLineAsync(text);
+                    await LogRemoteNodeSyncStreamWriter.WriteLineAsync(text);
                     break;
             }
         }
