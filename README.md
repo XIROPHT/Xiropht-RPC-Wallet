@@ -43,3 +43,4 @@ Features:
   
   -> Permit to create manualy a new wallet and store it inside the database encrypted.
  
+**Newtonsoft.Json library is used since version 0.0.0.1R for the API HTTP/HTTPS system: https://github.com/JamesNK/Newtonsoft.Json**
