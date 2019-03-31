@@ -2,12 +2,14 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Xiropht_Connector_All.Setting;
 using Xiropht_Connector_All.Utils;
 using Xiropht_Connector_All.Wallet;
 using Xiropht_Rpc_Wallet.ConsoleObject;
@@ -181,51 +183,54 @@ namespace Xiropht_Rpc_Wallet.API
                     {
                         try
                         {
-                            byte[] buffer = new byte[8192];
                             using (NetworkStream clientHttpReader = new NetworkStream(_client.Client))
                             {
-
-                                int received = await clientHttpReader.ReadAsync(buffer, 0, buffer.Length);
-                                if (received > 0)
+                                using (BufferedStream bufferedStreamNetwork = new BufferedStream(clientHttpReader, ClassConnectorSetting.MaxNetworkPacketSize))
                                 {
-                                    string packet = Encoding.UTF8.GetString(buffer, 0, received);
-                                    try
+                                    byte[] buffer = new byte[ClassConnectorSetting.MaxNetworkPacketSize];
+
+                                    int received = await bufferedStreamNetwork.ReadAsync(buffer, 0, buffer.Length);
+                                    if (received > 0)
                                     {
-                                        if (!GetAndCheckForwardedIp(packet))
+                                        string packet = Encoding.UTF8.GetString(buffer, 0, received);
+                                        try
                                         {
-                                            break;
+                                            if (!GetAndCheckForwardedIp(packet))
+                                            {
+                                                break;
+                                            }
                                         }
-                                    }
-                                    catch
-                                    {
-
-                                    }
-
-                                    packet = ClassUtility.GetStringBetween(packet, "GET /", "HTTP");
-                                    packet = packet.Replace("%7C", "|"); // Translate special character | 
-                                    packet = packet.Replace(" ", ""); // Remove empty,space characters
-                                    ClassConsole.ConsoleWriteLine("HTTP API - packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
-                                    if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
-                                    {
-                                        packet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, packet, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
-                                        if (packet == ClassAlgoErrorEnumeration.AlgoError)
+                                        catch
                                         {
-                                            ClassConsole.ConsoleWriteLine("HTTP API - wrong packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
-                                            break;
-                                        }
-                                        ClassConsole.ConsoleWriteLine("HTTP API - decrypted packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
-                                    }
 
-                                    await HandlePacketHttpAsync(packet);
-                                    break;
-                                }
-                                else
-                                {
-                                    totalWhile++;
-                                }
-                                if (totalWhile >= 8)
-                                {
-                                    break;
+                                        }
+
+                                        packet = ClassUtility.GetStringBetween(packet, "GET /", "HTTP");
+                                        packet = packet.Replace("%7C", "|"); // Translate special character | 
+                                        packet = packet.Replace(" ", ""); // Remove empty,space characters
+                                        ClassConsole.ConsoleWriteLine("HTTP API - packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
+                                        if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                        {
+                                            packet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, packet, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                            if (packet == ClassAlgoErrorEnumeration.AlgoError)
+                                            {
+                                                ClassConsole.ConsoleWriteLine("HTTP API - wrong packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
+                                                break;
+                                            }
+                                            ClassConsole.ConsoleWriteLine("HTTP API - decrypted packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
+                                        }
+
+                                        await HandlePacketHttpAsync(packet);
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        totalWhile++;
+                                    }
+                                    if (totalWhile >= 8)
+                                    {
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -727,12 +732,15 @@ namespace Xiropht_Rpc_Wallet.API
         {
             try
             {
-                var bytePacket = Encoding.UTF8.GetBytes(packet);
 
                 using (var networkStream = new NetworkStream(_client.Client))
                 {
-                    await networkStream.WriteAsync(bytePacket, 0, bytePacket.Length).ConfigureAwait(false);
-                    await networkStream.FlushAsync().ConfigureAwait(false);
+                    using (BufferedStream bufferedStreamNetwork = new BufferedStream(networkStream, ClassConnectorSetting.MaxNetworkPacketSize))
+                    {
+                        var bytePacket = Encoding.UTF8.GetBytes(packet);
+                        await bufferedStreamNetwork.WriteAsync(bytePacket, 0, bytePacket.Length).ConfigureAwait(false);
+                        await bufferedStreamNetwork.FlushAsync().ConfigureAwait(false);
+                    }
                 }
             }
             catch

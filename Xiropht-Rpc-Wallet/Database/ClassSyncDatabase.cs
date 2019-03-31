@@ -31,13 +31,13 @@ namespace Xiropht_Rpc_Wallet.Database
         {
             try
             {
-                if (!File.Exists(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + SyncDatabaseFile)))
+                if (!File.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile)))
                 {
-                    File.Create(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + SyncDatabaseFile)).Close();
+                    File.Create(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile)).Close();
                 }
                 else
                 {
-                    using (FileStream fs = File.Open(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + SyncDatabaseFile), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (FileStream fs = File.Open(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
                         using (BufferedStream bs = new BufferedStream(fs))
                         {
@@ -78,7 +78,7 @@ namespace Xiropht_Rpc_Wallet.Database
             {
                 return false;
             }
-            SyncDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + SyncDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
+            SyncDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
             ClassConsole.ConsoleWriteLine("Total transaction read from sync database: " + TotalTransactionRead, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelSyncDatabase);
             return true;
         }
@@ -105,7 +105,7 @@ namespace Xiropht_Rpc_Wallet.Database
                     }
                     catch
                     {
-                        SyncDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + SyncDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
+                        SyncDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
                     }
                 }
                 TotalTransactionRead++;

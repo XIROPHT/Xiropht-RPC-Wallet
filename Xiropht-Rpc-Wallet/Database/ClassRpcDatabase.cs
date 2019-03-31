@@ -44,9 +44,9 @@ namespace Xiropht_Rpc_Wallet.Database
             RpcDatabaseContent = new Dictionary<string, ClassWalletObject>();
             try
             {
-                if (File.Exists(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcDatabaseFile)))
+                if (File.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile)))
                 {
-                    using (FileStream fs = File.Open(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcDatabaseFile), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (FileStream fs = File.Open(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
                         using (BufferedStream bs = new BufferedStream(fs))
                         {
@@ -85,14 +85,14 @@ namespace Xiropht_Rpc_Wallet.Database
                 }
                 else
                 {
-                    File.Create(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcDatabaseFile)).Close();
+                    File.Create(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile)).Close();
                 }
             }
             catch
             {
                 return false;
             }
-            RpcDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
+            RpcDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
             return true;
         }
 
@@ -122,7 +122,7 @@ namespace Xiropht_Rpc_Wallet.Database
                     }
                     catch
                     {
-                        RpcDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
+                        RpcDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
 
                     }
                 }

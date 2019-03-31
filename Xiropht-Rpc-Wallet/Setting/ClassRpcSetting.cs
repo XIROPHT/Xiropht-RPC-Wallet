@@ -46,9 +46,9 @@ namespace Xiropht_Rpc_Wallet.Setting
         {
             try
             {
-                if (File.Exists(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcWalletSettingFile)))
+                if (File.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)))
                 {
-                    using (var streamReaderConfigPool = new StreamReader(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcWalletSettingFile)))
+                    using (var streamReaderConfigPool = new StreamReader(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)))
                     {
                         int numberOfLines = 0;
                         string line = string.Empty;
@@ -179,7 +179,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                 }
                 else
                 {
-                    File.Create(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcWalletSettingFile)).Close();
+                    File.Create(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)).Close();
                     MakeRpcWalletSetting();
                 }
             }
@@ -243,7 +243,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                 }
                 RpcWalletRemoteNodePort = port;
             }
-            using (var settingWriter = new StreamWriter(ClassUtility.ConvertPath(Directory.GetCurrentDirectory() + RpcWalletSettingFile), true, Encoding.UTF8, 8192) { AutoFlush = true })
+            using (var settingWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile), true, Encoding.UTF8, 8192) { AutoFlush = true })
             {
                 settingWriter.WriteLine("// RPC Wallet API port.");
                 settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiPortSetting + "=" + RpcWalletApiPort);

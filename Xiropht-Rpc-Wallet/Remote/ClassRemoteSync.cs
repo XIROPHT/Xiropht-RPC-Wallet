@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -140,39 +141,42 @@ namespace Xiropht_Rpc_Wallet.Remote
                     {
                         using (var networkReader = new NetworkStream(TcpRemoteNodeClient.Client))
                         {
-                            byte[] buffer = new byte[ClassConnectorSetting.MaxNetworkPacketSize];
-                            int received = await networkReader.ReadAsync(buffer, 0, buffer.Length);
-                            if (received > 0)
-                            {
-                                LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
-                                string packetReceived = Encoding.UTF8.GetString(buffer, 0, received);
-                                if (packetReceived.Contains("*"))
+                            using (BufferedStream bufferedStreamNetwork = new BufferedStream(networkReader, ClassConnectorSetting.MaxNetworkPacketSize))
+                            { 
+                                byte[] buffer = new byte[ClassConnectorSetting.MaxNetworkPacketSize];
+                                int received = await bufferedStreamNetwork.ReadAsync(buffer, 0, buffer.Length);
+                                if (received > 0)
                                 {
-                                    var splitPacketReceived = packetReceived.Split(new[] { "*" }, StringSplitOptions.None);
-                                    if (splitPacketReceived.Length > 1)
+                                    LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
+                                    string packetReceived = Encoding.UTF8.GetString(buffer, 0, received);
+                                    if (packetReceived.Contains("*"))
                                     {
-                                        foreach(var packetEach in splitPacketReceived)
+                                        var splitPacketReceived = packetReceived.Split(new[] { "*" }, StringSplitOptions.None);
+                                        if (splitPacketReceived.Length > 1)
                                         {
-                                            if (packetEach != null)
+                                            foreach (var packetEach in splitPacketReceived)
                                             {
-                                                if (!string.IsNullOrEmpty(packetEach))
+                                                if (packetEach != null)
                                                 {
-                                                    if (packetEach.Length > 1)
+                                                    if (!string.IsNullOrEmpty(packetEach))
                                                     {
-                                                        await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetEach), CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
+                                                        if (packetEach.Length > 1)
+                                                        {
+                                                            await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetEach), CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
+                                        else
+                                        {
+                                            await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetReceived.Replace("*", "")), CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
+                                        }
                                     }
                                     else
                                     {
-                                        await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetReceived.Replace("*", "")), CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
+                                        await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetReceived), CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
                                     }
-                                }
-                                else
-                                {
-                                    await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetReceived), CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
                                 }
                             }
                         }
@@ -282,9 +286,12 @@ namespace Xiropht_Rpc_Wallet.Remote
             {
                 using (var networkWriter = new NetworkStream(TcpRemoteNodeClient.Client))
                 {
-                    var bytePacket = Encoding.UTF8.GetBytes(packet+"*");
-                    await networkWriter.WriteAsync(bytePacket, 0, bytePacket.Length);
-                    await networkWriter.FlushAsync();
+                    using (BufferedStream bufferedStream = new BufferedStream(networkWriter, ClassConnectorSetting.MaxNetworkPacketSize))
+                    {
+                        var bytePacket = Encoding.UTF8.GetBytes(packet + "*");
+                        await bufferedStream.WriteAsync(bytePacket, 0, bytePacket.Length);
+                        await bufferedStream.FlushAsync();
+                    }
                 }
             }
             catch
