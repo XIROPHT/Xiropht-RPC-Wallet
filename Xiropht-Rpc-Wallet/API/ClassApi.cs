@@ -373,12 +373,24 @@ namespace Xiropht_Rpc_Wallet.API
                             if (anonymousOption == "1")
                             {
                                 string result = await ClassWalletUpdater.ProceedTransactionTokenRequestAsync(walletAddressSource, amount, fee, walletAddressTarget, true);
-                                await BuildAndSendHttpPacketAsync(result);
+                                var splitResult = result.Split(new[] { "|" }, StringSplitOptions.None);
+                                Dictionary<string, string> walletTransactionContent = new Dictionary<string, string>()
+                                {
+                                      {"result", splitResult[0] },
+                                      {"hash", splitResult[1].ToLower() },
+                                };
+                                await BuildAndSendHttpPacketAsync(string.Empty, true, walletTransactionContent);
                             }
                             else
                             {
                                 string result = await ClassWalletUpdater.ProceedTransactionTokenRequestAsync(walletAddressSource, amount, fee, walletAddressTarget, false);
-                                await BuildAndSendHttpPacketAsync(result);
+                                var splitResult = result.Split(new[] { "|" }, StringSplitOptions.None);
+                                Dictionary<string, string> walletTransactionContent = new Dictionary<string, string>()
+                                {
+                                      {"result", splitResult[0] },
+                                      {"hash", splitResult[1].ToLower() },
+                                };
+                                await BuildAndSendHttpPacketAsync(string.Empty, true, walletTransactionContent);
                             }
                         }
                         else
