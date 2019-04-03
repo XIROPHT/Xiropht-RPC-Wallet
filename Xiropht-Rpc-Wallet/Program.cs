@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Threading;
 using Xiropht_Connector_All.Setting;
@@ -30,6 +31,7 @@ namespace Xiropht_Rpc_Wallet
             Thread.CurrentThread.Name = Path.GetFileName(Environment.GetCommandLineArgs()[0]);
             GlobalCultureInfo = new CultureInfo("fr-FR");
             ClassLog.LogInitialization();
+            ServicePointManager.DefaultConnectionLimit = 65535;
             ClassConsole.ConsoleWriteLine(ClassConnectorSetting.CoinName + " RPC Wallet - " + Assembly.GetExecutingAssembly().GetName().Version + "R", ClassConsoleColorEnumeration.IndexConsoleBlueLog, LogLevel);
             if (ClassRpcSetting.InitializeRpcWalletSetting())
             {

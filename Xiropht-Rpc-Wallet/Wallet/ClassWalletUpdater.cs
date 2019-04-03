@@ -65,25 +65,27 @@ namespace Xiropht_Rpc_Wallet.Wallet
                                 {
 
                                     walletObject.Value.SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds());
-                                    
-                                    try
+                                    await Task.Factory.StartNew(async () =>
                                     {
-                                        await GetWalletBalanceTokenAsync(getSeedNodeRandom, walletObject.Key);
-                                        if (walletObject.Value.GetWalletUniqueId() == "-1")
+                                        try
                                         {
-                                            await GetWalletUniqueIdAsync(getSeedNodeRandom, walletObject.Key);
+                                            await GetWalletBalanceTokenAsync(getSeedNodeRandom, walletObject.Key);
+                                            if (walletObject.Value.GetWalletUniqueId() == "-1")
+                                            {
+                                                await GetWalletUniqueIdAsync(getSeedNodeRandom, walletObject.Key);
+                                            }
+                                            if (walletObject.Value.GetWalletAnonymousUniqueId() == "-1")
+                                            {
+                                                await GetWalletAnonymousUniqueIdAsync(getSeedNodeRandom, walletObject.Key);
+                                            }
                                         }
-                                        if (walletObject.Value.GetWalletAnonymousUniqueId() == "-1")
+                                        catch (Exception error)
                                         {
-                                            await GetWalletAnonymousUniqueIdAsync(getSeedNodeRandom, walletObject.Key);
-                                        }
-                                    }
-                                    catch (Exception error)
-                                    {
 #if DEBUG
                                         Debug.WriteLine("Error on update wallet: " + walletObject.Key + " exception: " + error.Message);
 #endif
-                                    }
+                                        }
+                                    },CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current).ConfigureAwait(false);
                                 }
                             }
                         }
