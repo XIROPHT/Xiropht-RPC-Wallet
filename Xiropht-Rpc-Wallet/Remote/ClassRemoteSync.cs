@@ -162,7 +162,7 @@ namespace Xiropht_Rpc_Wallet.Remote
                                                     {
                                                         if (packetEach.Length > 1)
                                                         {
-                                                            await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetEach), CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
+                                                            await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetEach), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Current).ConfigureAwait(false);
                                                         }
                                                     }
                                                 }
@@ -170,12 +170,12 @@ namespace Xiropht_Rpc_Wallet.Remote
                                         }
                                         else
                                         {
-                                            await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetReceived.Replace("*", "")), CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
+                                            await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetReceived.Replace("*", "")), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Current).ConfigureAwait(false);
                                         }
                                     }
                                     else
                                     {
-                                        await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetReceived), CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
+                                        await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetReceived), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Current).ConfigureAwait(false);
                                     }
                                 }
                             }

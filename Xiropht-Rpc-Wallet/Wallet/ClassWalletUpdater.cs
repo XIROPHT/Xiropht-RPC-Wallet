@@ -313,7 +313,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
 
             ClassConsole.ConsoleWriteLine("Send transaction refused from wallet address " + walletAddress + " of amount " + amount + " " + ClassConnectorSetting.CoinNameMin + " fee " + fee + " " + ClassConnectorSetting.CoinNameMin + " to target -> " + walletAddressTarget, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
             ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnSendTransactionStatus(false);
-            return ClassRpcWalletCommand.SendTokenTransactionRefused;
+            return ClassRpcWalletCommand.SendTokenTransactionRefused + "|None";
         }
 
         /// <summary>
@@ -327,7 +327,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
             request.AutomaticDecompression = DecompressionMethods.GZip;
             request.ServicePoint.Expect100Continue = false;
             request.KeepAlive = false;
-            request.Timeout = 1000;
+            request.Timeout = 2000;
             request.UserAgent = ClassConnectorSetting.CoinName + " RPC Wallet - " + Assembly.GetExecutingAssembly().GetName().Version + "R";
             string responseContent = string.Empty;
             using (HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync())

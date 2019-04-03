@@ -127,7 +127,7 @@ namespace Xiropht_Rpc_Wallet.Database
                     }
                 }
                 InSave = false;
-            }, CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest);
+            }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Current);
         }
     }
 }

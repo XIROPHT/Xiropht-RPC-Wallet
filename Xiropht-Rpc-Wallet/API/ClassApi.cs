@@ -47,12 +47,14 @@ namespace Xiropht_Rpc_Wallet.API
         private static bool ListenApiHttpConnectionStatus;
         private static Thread ThreadListenApiHttpConnection;
         private static TcpListener ListenerApiHttpConnection;
+        private static PriorityScheduler PrioritySchedulerApi;
 
         /// <summary>
         /// Enable http/https api of the remote node, listen incoming connection throught web client.
         /// </summary>
         public static void StartApiHttpServer()
         {
+            PrioritySchedulerApi = new PriorityScheduler(ThreadPriority.Lowest);
             ListenApiHttpConnectionStatus = true;
             if (ClassRpcSetting.RpcWalletApiPort <= 0) // Not selected or invalid
             {
@@ -77,7 +79,7 @@ namespace Xiropht_Rpc_Wallet.API
                             {
                                 await clientApiHttpObject.StartHandleClientHttpAsync();
                             }
-                        }, CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
+                        }, CancellationToken.None, TaskCreationOptions.None, PrioritySchedulerApi).ConfigureAwait(false);
                     }
                     catch
                     {
@@ -645,7 +647,7 @@ namespace Xiropht_Rpc_Wallet.API
                                 {
                                     ClassConsole.ConsoleWriteLine("RPC Wallet cannot create a new wallet.", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
                                 }
-                            }, CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Lowest).ConfigureAwait(false);
+                            }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Current).ConfigureAwait(false);
 
                             while (walletCreatorObject.WalletCreateResult == ClassWalletCreatorEnumeration.WalletCreatorPending)
                             {
