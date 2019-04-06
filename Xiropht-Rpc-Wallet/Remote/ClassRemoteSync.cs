@@ -56,7 +56,7 @@ namespace Xiropht_Rpc_Wallet.Remote
         /// <summary>
         /// Connect RPC Wallet to a remote node selected.
         /// </summary>
-        public static async Task ConnectRpcWalletToSyncAsync()
+        public static async Task ConnectRpcWalletToRemoteNodeSyncAsync()
         {
             while(!ConnectionStatus)
             {
@@ -261,7 +261,7 @@ namespace Xiropht_Rpc_Wallet.Remote
                             }
                             Thread.Sleep(1000);
                             ClassConsole.ConsoleWriteLine("Connection to remote node host is closed, retry to connect", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                            await ConnectRpcWalletToSyncAsync();
+                            await ConnectRpcWalletToRemoteNodeSyncAsync();
                         }
                     }
                     catch

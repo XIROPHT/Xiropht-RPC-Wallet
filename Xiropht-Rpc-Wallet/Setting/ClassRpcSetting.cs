@@ -18,6 +18,7 @@ namespace Xiropht_Rpc_Wallet.Setting
         public const string SettingRemoteNodeHost = "REMOTE-NODE-HOST";
         public const string SettingRemoteNodePort = "REMOTE-NODE-PORT";
         public const string SettingWalletUpdateInterval = "WALLET-UPDATE-INTERVAL";
+        public const string SettingWalletEnableAutoUpdate = "WALLET-ENABLE-AUTO-UPDATE";
     }
 
     public class ClassRpcSetting
@@ -36,7 +37,9 @@ namespace Xiropht_Rpc_Wallet.Setting
 
         public static int RpcWalletRemoteNodePort = ClassConnectorSetting.RemoteNodePort; // Remote Node Port
 
-        public static int WalletUpdateInterval = 10; // Interval of time in second(s) between whole updates of wallets informations.
+        public static int WalletUpdateInterval = 60; // Interval of time in second(s) between whole updates of wallets informations.
+
+        public static bool WalletEnableAutoUpdateWallet = false; // Enable auto update of wallets informations.
 
         /// <summary>
         /// Initialize setting of RPC Wallet
@@ -46,9 +49,11 @@ namespace Xiropht_Rpc_Wallet.Setting
         {
             try
             {
-                if (File.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)))
+                if (File.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)))
                 {
-                    using (var streamReaderConfigPool = new StreamReader(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)))
+                    bool containUpdate = false;
+
+                    using (var streamReaderConfigPool = new StreamReader(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)))
                     {
                         int numberOfLines = 0;
                         string line = string.Empty;
@@ -126,7 +131,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                                                     case ClassRpcSettingEnumeration.SettingEnableRemoteNodeSync:
                                                         if (splitLine.Length > 1)
                                                         {
-                                                            if (splitLine[1].ToLower() == "y")
+                                                            if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
                                                             {
                                                                 RpcWalletEnableRemoteNodeSync = true;
                                                             }
@@ -149,6 +154,20 @@ namespace Xiropht_Rpc_Wallet.Setting
                                                         {
                                                             WalletUpdateInterval = walletUpdateInterval;
                                                         }
+                                                        break;
+                                                    case ClassRpcSettingEnumeration.SettingWalletEnableAutoUpdate:
+                                                        if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
+                                                        {
+                                                            ClassConsole.ConsoleWriteLine("Warning auto update is enabled, be sure to select a good interval time of update for don't be detected has flooding on seed nodes.", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                                                            WalletEnableAutoUpdateWallet = true;
+                                                        }
+                                                        else
+                                                        {
+
+                                                            ClassConsole.ConsoleWriteLine("Warning auto update system is disabled, be sure to use your API to update manually wallets informations.", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                                                            WalletEnableAutoUpdateWallet = false;
+                                                        }
+                                                        containUpdate = true;
                                                         break;
                                                     default:
                                                         if (splitLine.Length > 1)
@@ -176,10 +195,16 @@ namespace Xiropht_Rpc_Wallet.Setting
                             }
                         }
                     }
+                    if (!containUpdate)
+                    {
+                        ClassConsole.ConsoleWriteLine("Setting system of RPC Wallet has been updated, create a new setting file now: ", ClassConsoleColorEnumeration.IndexConsoleMagentaLog);
+                        File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)).Close();
+                        MakeRpcWalletSetting();
+                    }
                 }
                 else
                 {
-                    File.Create(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)).Close();
+                    File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)).Close();
                     MakeRpcWalletSetting();
                 }
             }
@@ -243,7 +268,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                 }
                 RpcWalletRemoteNodePort = port;
             }
-            using (var settingWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile), true, Encoding.UTF8, 8192) { AutoFlush = true })
+            using (var settingWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile), true, Encoding.UTF8, 8192) { AutoFlush = true })
             {
                 settingWriter.WriteLine("// RPC Wallet API port.");
                 settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiPortSetting + "=" + RpcWalletApiPort);
@@ -285,15 +310,32 @@ namespace Xiropht_Rpc_Wallet.Setting
                 settingWriter.WriteLine("// Remote Node Port");
                 settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingRemoteNodePort + "=" + RpcWalletRemoteNodePort);
 
-                settingWriter.WriteLine("// Interval of time in second(s) between whole updates of wallets informations.");
-                ClassConsole.ConsoleWriteLine("Write the interval of time in second(s) to update wallets informations. (by default " + WalletUpdateInterval + "): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
-                int interval = WalletUpdateInterval;
-                while (!int.TryParse(Console.ReadLine(), out interval))
+
+                ClassConsole.ConsoleWriteLine("Do you want to enable the auto update system? (by default this function is not enabled): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+                yourChoose = Console.ReadLine().ToLower() == "y";
+                if (yourChoose)
                 {
-                    ClassConsole.ConsoleWriteLine("Write a valid interval of time in second(s) to update wallets informations. (by default " + WalletUpdateInterval + "): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+                    WalletEnableAutoUpdateWallet = true;
+                    settingWriter.WriteLine("//Enable auto update of wallets informations.");
+                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletEnableAutoUpdate + "=Y");
+                    settingWriter.WriteLine("// Interval of time in second(s) between whole updates of wallets informations.");
+                    ClassConsole.ConsoleWriteLine("Write the interval of time in second(s) to update wallets informations. (by default " + WalletUpdateInterval + "): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+                    int interval = WalletUpdateInterval;
+                    while (!int.TryParse(Console.ReadLine(), out interval))
+                    {
+                        ClassConsole.ConsoleWriteLine("Write a valid interval of time in second(s) to update wallets informations. (by default " + WalletUpdateInterval + "): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+                    }
+                    WalletUpdateInterval = interval;
+                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletUpdateInterval + "=" + WalletUpdateInterval);
                 }
-                WalletUpdateInterval = interval;
-                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletUpdateInterval + "=" + WalletUpdateInterval);
+                else
+                {
+                    WalletEnableAutoUpdateWallet = false;
+                    settingWriter.WriteLine("//Enable auto update of wallets informations.");
+                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletEnableAutoUpdate + "=N");
+                    settingWriter.WriteLine("// Interval of time in second(s) between whole updates of wallets informations.");
+                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletUpdateInterval + "=" + WalletUpdateInterval);
+                }
             }
         }
     }

@@ -46,16 +46,19 @@ namespace Xiropht_Rpc_Wallet
                     {
 
                         ClassConsole.ConsoleWriteLine("RPC Sync Database successfully loaded.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
-                        ClassConsole.ConsoleWriteLine("Enable Auto Update Wallet System..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
-                        ClassWalletUpdater.EnableAutoUpdateWallet();
-                        ClassConsole.ConsoleWriteLine("Enable Auto Update Wallet System done.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
+                        if (ClassRpcSetting.WalletEnableAutoUpdateWallet)
+                        {
+                            ClassConsole.ConsoleWriteLine("Enable Auto Update Wallet System..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
+                            ClassWalletUpdater.EnableAutoUpdateWallet();
+                            ClassConsole.ConsoleWriteLine("Enable Auto Update Wallet System done.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
+                        }
                         ClassConsole.ConsoleWriteLine("Start RPC Wallet API Server..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
                         ClassApi.StartApiHttpServer();
                         ClassConsole.ConsoleWriteLine("Start RPC Wallet API Server sucessfully started.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
                         if (ClassRpcSetting.RpcWalletEnableRemoteNodeSync && ClassRpcSetting.RpcWalletRemoteNodeHost != string.Empty && ClassRpcSetting.RpcWalletRemoteNodePort != 0)
                         {
                             ClassConsole.ConsoleWriteLine("RPC Remote Node Sync system loading..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
-                            new Thread(async () => await ClassRemoteSync.ConnectRpcWalletToSyncAsync()).Start();
+                            new Thread(async () => await ClassRemoteSync.ConnectRpcWalletToRemoteNodeSyncAsync()).Start();
                         }
                         ClassConsole.ConsoleWriteLine("Enable Command Line system.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
                         ClassConsoleCommandLine.EnableConsoleCommandLine();

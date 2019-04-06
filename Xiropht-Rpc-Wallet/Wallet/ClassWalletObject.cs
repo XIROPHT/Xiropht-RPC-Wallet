@@ -18,6 +18,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         private List<string> WalletListOfTransaction;
         private List<string> WalletListOfAnonymousTransaction;
         private string WalletReadLine;
+        private bool WalletInUpdate;
 
         /// <summary>
         /// Constructor
@@ -38,6 +39,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
             WalletListOfTransaction = new List<string>();
             WalletListOfAnonymousTransaction = new List<string>();
             WalletReadLine = line;
+            WalletInUpdate = false;
         }
 
         /// <summary>
@@ -96,6 +98,15 @@ namespace Xiropht_Rpc_Wallet.Wallet
         public void SetWalletOnSendTransactionStatus(bool status)
         {
             WalletOnSendingTransaction = status;
+        }
+
+        /// <summary>
+        /// Set the current wallet update status.
+        /// </summary>
+        /// <param name="status"></param>
+        public void SetWalletOnUpdateStatus(bool status)
+        {
+            WalletInUpdate = status;
         }
 
         /// <summary>
@@ -262,6 +273,15 @@ namespace Xiropht_Rpc_Wallet.Wallet
                 return WalletListOfAnonymousTransaction[index];
             }
             return null;
+        }
+
+        /// <summary>
+        /// Return the current wallet status.
+        /// </summary>
+        /// <returns></returns>
+        public bool GetWalletUpdateStatus()
+        {
+            return WalletInUpdate;
         }
     }
 }

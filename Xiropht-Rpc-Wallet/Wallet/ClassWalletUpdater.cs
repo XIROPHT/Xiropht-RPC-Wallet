@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Threading;
@@ -13,7 +14,7 @@ using Xiropht_Connector_All.Utils;
 using Xiropht_Connector_All.Wallet;
 using Xiropht_Rpc_Wallet.ConsoleObject;
 using Xiropht_Rpc_Wallet.Database;
-using Xiropht_Rpc_Wallet.Threading;
+using Xiropht_Rpc_Wallet.Setting;
 
 namespace Xiropht_Rpc_Wallet.Wallet
 {
@@ -23,8 +24,12 @@ namespace Xiropht_Rpc_Wallet.Wallet
         private const string RpcTokenNetworkNotExist = "not_exist";
         private const string RpcTokenNetworkWalletAddressNotExist = "wallet_address_not_exist";
 
+        /// <summary>
+        /// Enable auto update wallet system.
+        /// </summary>
         public static void EnableAutoUpdateWallet()
         {
+
             if (ThreadAutoUpdateWallet != null && (ThreadAutoUpdateWallet.IsAlive || ThreadAutoUpdateWallet != null))
             {
                 ThreadAutoUpdateWallet.Abort();
@@ -33,72 +38,84 @@ namespace Xiropht_Rpc_Wallet.Wallet
 
             ThreadAutoUpdateWallet = new Thread(async delegate ()
             {
-            while (!Program.Exit)
-            {
-                if (ClassRpcDatabase.RpcDatabaseContent.Count > 0)
+                while (!Program.Exit)
                 {
-                    string getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[0];
-                    while (!await CheckTcp.CheckTcpClientAsync(getSeedNodeRandom, ClassConnectorSetting.SeedNodeTokenPort))
+                    if (ClassRpcDatabase.RpcDatabaseContent.Count > 0)
                     {
+                        string getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[0];
+                        while (!await CheckTcp.CheckTcpClientAsync(getSeedNodeRandom, ClassConnectorSetting.SeedNodeTokenPort))
+                        {
 #if DEBUG
                             Debug.WriteLine("Seed Node host: " + getSeedNodeRandom + " is dead, check another..");
 #endif
-                        if (ClassConnectorSetting.SeedNodeIp.Count > 1)
-                        {
-                            getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)];
-                        }
-                        if (Program.Exit)
-                        {
-                            break;
-                        }
-                        Thread.Sleep(100);
-                    }
-                    try
-                    {
-                        foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent)
-                        {
+                            if (ClassConnectorSetting.SeedNodeIp.Count > 1)
+                            {
+                                getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)];
+                            }
                             if (Program.Exit)
                             {
                                 break;
                             }
-                                if (walletObject.Value.GetLastWalletUpdate() + 10 <= DateTimeOffset.Now.ToUnixTimeSeconds())
+                            Thread.Sleep(100);
+                        }
+                        try
+                        {
+                            foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent)
+                            {
+                                if (Program.Exit)
                                 {
-
+                                    break;
+                                }
+                                if (!walletObject.Value.GetWalletUpdateStatus())
+                                {
                                     walletObject.Value.SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds());
-                                    await Task.Factory.StartNew(async () =>
-                                    {
-                                        try
-                                        {
-                                            await GetWalletBalanceTokenAsync(getSeedNodeRandom, walletObject.Key);
-                                            if (walletObject.Value.GetWalletUniqueId() == "-1")
-                                            {
-                                                await GetWalletUniqueIdAsync(getSeedNodeRandom, walletObject.Key);
-                                            }
-                                            if (walletObject.Value.GetWalletAnonymousUniqueId() == "-1")
-                                            {
-                                                await GetWalletAnonymousUniqueIdAsync(getSeedNodeRandom, walletObject.Key);
-                                            }
-                                        }
-                                        catch (Exception error)
-                                        {
+                                    walletObject.Value.SetWalletOnUpdateStatus(true);
+
+                                     await Task.Factory.StartNew(async () =>
+                                     {
+                                         try
+                                         {
+
+
+                                             await GetWalletBalanceTokenAsync(getSeedNodeRandom, walletObject.Key);
+
+                                             if (walletObject.Value.GetWalletUniqueId() == "-1")
+                                             {
+                                                 await GetWalletUniqueIdAsync(getSeedNodeRandom, walletObject.Key);
+                                             }
+                                             if (walletObject.Value.GetWalletAnonymousUniqueId() == "-1")
+                                             {
+                                                 await GetWalletAnonymousUniqueIdAsync(getSeedNodeRandom, walletObject.Key);
+                                             }
+                                             walletObject.Value.SetWalletOnUpdateStatus(false);
+                                         }
+                                         catch (Exception error)
+                                         {
 #if DEBUG
                                         Debug.WriteLine("Error on update wallet: " + walletObject.Key + " exception: " + error.Message);
 #endif
-                                        }
-                                    },CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current).ConfigureAwait(false);
+                                         }
+
+                                     }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Current).ConfigureAwait(false);
+
+
                                 }
                             }
+
                         }
                         catch
                         {
                         }
                     }
-                    Thread.Sleep(10 * 1000);
+                    Thread.Sleep(ClassRpcSetting.WalletUpdateInterval * 1000);
                 }
             });
             ThreadAutoUpdateWallet.Start();
         }
 
+        /// <summary>
+        /// Disable auto update wallet system.
+        /// </summary>
         public static void DisableAutoUpdateWallet()
         {
             if (ThreadAutoUpdateWallet != null && (ThreadAutoUpdateWallet.IsAlive || ThreadAutoUpdateWallet != null))
@@ -109,6 +126,43 @@ namespace Xiropht_Rpc_Wallet.Wallet
         }
 
         /// <summary>
+        /// Update Wallet target
+        /// </summary>
+        /// <param name="walletAddress"></param>
+        /// <returns></returns>
+        public static async Task UpdateWallet(string walletAddress)
+        {
+            string getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[0];
+            while (!await CheckTcp.CheckTcpClientAsync(getSeedNodeRandom, ClassConnectorSetting.SeedNodeTokenPort))
+            {
+#if DEBUG
+                Debug.WriteLine("Seed Node host: " + getSeedNodeRandom + " is dead, check another..");
+#endif
+                if (ClassConnectorSetting.SeedNodeIp.Count > 1)
+                {
+                    getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)];
+                }
+                if (Program.Exit)
+                {
+                    break;
+                }
+                await Task.Delay(100);
+            }
+            ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnUpdateStatus(true);
+            await GetWalletBalanceTokenAsync(getSeedNodeRandom, walletAddress);
+
+            if (ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletUniqueId() == "-1")
+            {
+                await GetWalletUniqueIdAsync(getSeedNodeRandom, walletAddress);
+            }
+            if (ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletAnonymousUniqueId() == "-1")
+            {
+                await GetWalletAnonymousUniqueIdAsync(getSeedNodeRandom, walletAddress);
+            }
+            ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnUpdateStatus(false);
+        }
+
+        /// <summary>
         /// Get wallet token from token system.
         /// </summary>
         /// <param name="getSeedNodeRandom"></param>
@@ -116,7 +170,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         private static async Task<string> GetWalletTokenAsync(string getSeedNodeRandom, string walletAddress)
         {
-            string encryptedRequest = ClassRpcWalletCommand.TokenAsk + "|empty-token|" + DateTimeOffset.Now.ToUnixTimeSeconds();
+            string encryptedRequest = ClassRpcWalletCommand.TokenAsk + "|empty-token|" + (DateTimeOffset.Now.ToUnixTimeSeconds() + 1);
             encryptedRequest = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, encryptedRequest, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
             string responseWallet = await ProceedTokenRequestAsync("http://" + getSeedNodeRandom + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/" + ClassConnectorSettingEnumeration.WalletTokenType + "|" + walletAddress + "|" + encryptedRequest);
             var responseWalletJson = JObject.Parse(responseWallet);
@@ -146,36 +200,39 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="token"></param>
         /// <param name="getSeedNodeRandom"></param>
         /// <param name="walletAddress"></param>
-        private static async Task GetWalletBalanceTokenAsync(string getSeedNodeRandom, string walletAddress)
+        public static async Task GetWalletBalanceTokenAsync(string getSeedNodeRandom, string walletAddress)
         {
             string token = await GetWalletTokenAsync(getSeedNodeRandom, walletAddress);
-            string encryptedRequest = ClassRpcWalletCommand.TokenAskBalance + "|" + token + "|" + DateTimeOffset.Now.ToUnixTimeSeconds();
-            encryptedRequest = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, encryptedRequest, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
-            string responseWallet = await ProceedTokenRequestAsync("http://" + getSeedNodeRandom + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/" + ClassConnectorSettingEnumeration.WalletTokenType + "|" + walletAddress + "|" + encryptedRequest);
-            var responseWalletJson = JObject.Parse(responseWallet);
-            responseWallet = responseWalletJson["result"].ToString();
-            if (responseWallet != RpcTokenNetworkNotExist)
+            if (token != RpcTokenNetworkNotExist)
             {
-                responseWallet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, responseWallet, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey() + token, ClassWalletNetworkSetting.KeySize);
-                if (responseWallet != ClassAlgoErrorEnumeration.AlgoError)
+                string encryptedRequest = ClassRpcWalletCommand.TokenAskBalance + "|" + token + "|" + (DateTimeOffset.Now.ToUnixTimeSeconds() + 1);
+                encryptedRequest = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, encryptedRequest, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
+                string responseWallet = await ProceedTokenRequestAsync("http://" + getSeedNodeRandom + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/" + ClassConnectorSettingEnumeration.WalletTokenType + "|" + walletAddress + "|" + encryptedRequest);
+                var responseWalletJson = JObject.Parse(responseWallet);
+                responseWallet = responseWalletJson["result"].ToString();
+                if (responseWallet != RpcTokenNetworkNotExist)
                 {
-                    string walletBalance = responseWallet;
-                    var splitWalletBalance = walletBalance.Split(new[] { "|" }, StringSplitOptions.None);
-                    if ((long.Parse(splitWalletBalance[splitWalletBalance.Length - 1]) + 10) - DateTimeOffset.Now.ToUnixTimeSeconds() < 60)
+                    responseWallet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, responseWallet, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey() + token, ClassWalletNetworkSetting.KeySize);
+                    if (responseWallet != ClassAlgoErrorEnumeration.AlgoError)
                     {
-                        if (long.Parse(splitWalletBalance[splitWalletBalance.Length - 1]) + 10 >= DateTimeOffset.Now.ToUnixTimeSeconds())
+                        string walletBalance = responseWallet;
+                        var splitWalletBalance = walletBalance.Split(new[] { "|" }, StringSplitOptions.None);
+                        if ((long.Parse(splitWalletBalance[splitWalletBalance.Length - 1]) + 10) - DateTimeOffset.Now.ToUnixTimeSeconds() < 60)
                         {
-                            ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletBalance(splitWalletBalance[1]);
-                            ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletPendingBalance(splitWalletBalance[2]);
+                            if (long.Parse(splitWalletBalance[splitWalletBalance.Length - 1]) + 10 >= DateTimeOffset.Now.ToUnixTimeSeconds())
+                            {
+                                ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletBalance(splitWalletBalance[1]);
+                                ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletPendingBalance(splitWalletBalance[2]);
+                            }
+                            else
+                            {
+                                ClassConsole.ConsoleWriteLine("Wallet packet time balance token request: " + walletBalance + " is expired.", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+                            }
                         }
                         else
                         {
-                            ClassConsole.ConsoleWriteLine("Wallet packet time balance token request: " + walletBalance + " is expired.", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+                            ClassConsole.ConsoleWriteLine("Wallet packet time balance token request: " + walletBalance + " is too huge", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
                         }
-                    }
-                    else
-                    {
-                        ClassConsole.ConsoleWriteLine("Wallet packet time balance token request: "+walletBalance+" is too huge", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
                     }
                 }
             }
@@ -190,32 +247,35 @@ namespace Xiropht_Rpc_Wallet.Wallet
         private static async Task GetWalletUniqueIdAsync(string getSeedNodeRandom, string walletAddress)
         {
             string token = await GetWalletTokenAsync(getSeedNodeRandom, walletAddress);
-            string encryptedRequest = ClassRpcWalletCommand.TokenAskWalletId + "|" + token + "|" + DateTimeOffset.Now.ToUnixTimeSeconds();
-            encryptedRequest = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, encryptedRequest, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
-            string responseWallet = await ProceedTokenRequestAsync("http://" + getSeedNodeRandom + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/" + ClassConnectorSettingEnumeration.WalletTokenType + "|" + walletAddress + "|" + encryptedRequest);
-            var responseWalletJson = JObject.Parse(responseWallet);
-            responseWallet = responseWalletJson["result"].ToString();
-            if (responseWallet != RpcTokenNetworkNotExist)
+            if (token != RpcTokenNetworkNotExist)
             {
-                responseWallet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, responseWallet, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey() + token, ClassWalletNetworkSetting.KeySize);
-                if (responseWallet != ClassAlgoErrorEnumeration.AlgoError)
+                string encryptedRequest = ClassRpcWalletCommand.TokenAskWalletId + "|" + token + "|" + (DateTimeOffset.Now.ToUnixTimeSeconds() + 1);
+                encryptedRequest = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, encryptedRequest, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
+                string responseWallet = await ProceedTokenRequestAsync("http://" + getSeedNodeRandom + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/" + ClassConnectorSettingEnumeration.WalletTokenType + "|" + walletAddress + "|" + encryptedRequest);
+                var responseWalletJson = JObject.Parse(responseWallet);
+                responseWallet = responseWalletJson["result"].ToString();
+                if (responseWallet != RpcTokenNetworkNotExist)
                 {
-                    string walletRequest = responseWallet;
-                    var splitWalletRequest = walletRequest.Split(new[] { "|" }, StringSplitOptions.None);
-                    if ((long.Parse(splitWalletRequest[splitWalletRequest.Length - 1]) + 10) - DateTimeOffset.Now.ToUnixTimeSeconds() < 60)
+                    responseWallet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, responseWallet, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey() + token, ClassWalletNetworkSetting.KeySize);
+                    if (responseWallet != ClassAlgoErrorEnumeration.AlgoError)
                     {
-                        if (long.Parse(splitWalletRequest[splitWalletRequest.Length - 1]) + 10 >= DateTimeOffset.Now.ToUnixTimeSeconds())
+                        string walletRequest = responseWallet;
+                        var splitWalletRequest = walletRequest.Split(new[] { "|" }, StringSplitOptions.None);
+                        if ((long.Parse(splitWalletRequest[splitWalletRequest.Length - 1]) + 10) - DateTimeOffset.Now.ToUnixTimeSeconds() < 60)
                         {
-                            ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletUniqueId(splitWalletRequest[1]);
+                            if (long.Parse(splitWalletRequest[splitWalletRequest.Length - 1]) + 10 >= DateTimeOffset.Now.ToUnixTimeSeconds())
+                            {
+                                ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletUniqueId(splitWalletRequest[1]);
+                            }
+                            else
+                            {
+                                ClassConsole.ConsoleWriteLine("Wallet packet time wallet unique id token request: " + walletRequest + " is expired.", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+                            }
                         }
                         else
                         {
-                            ClassConsole.ConsoleWriteLine("Wallet packet time wallet unique id token request: " + walletRequest + " is expired.", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+                            ClassConsole.ConsoleWriteLine("Wallet packet time wallet unique id token request: " + walletRequest + " is too huge", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
                         }
-                    }
-                    else
-                    {
-                        ClassConsole.ConsoleWriteLine("Wallet packet time wallet unique id token request: " + walletRequest + " is too huge", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
                     }
                 }
             }
@@ -230,23 +290,26 @@ namespace Xiropht_Rpc_Wallet.Wallet
         private static async Task GetWalletAnonymousUniqueIdAsync(string getSeedNodeRandom, string walletAddress)
         {
             string token = await GetWalletTokenAsync(getSeedNodeRandom, walletAddress);
-            string encryptedRequest = ClassRpcWalletCommand.TokenAskWalletAnonymousId + "|" + token + "|" + DateTimeOffset.Now.ToUnixTimeSeconds();
-            encryptedRequest = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, encryptedRequest, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
-            string responseWallet = await ProceedTokenRequestAsync("http://" + getSeedNodeRandom + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/" + ClassConnectorSettingEnumeration.WalletTokenType + "|" + walletAddress + "|" + encryptedRequest);
-            var responseWalletJson = JObject.Parse(responseWallet);
-            responseWallet = responseWalletJson["result"].ToString();
-            if (responseWallet != RpcTokenNetworkNotExist)
+            if (token != RpcTokenNetworkNotExist)
             {
-                responseWallet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, responseWallet, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey() + token, ClassWalletNetworkSetting.KeySize);
-                if (responseWallet != ClassAlgoErrorEnumeration.AlgoError)
+                string encryptedRequest = ClassRpcWalletCommand.TokenAskWalletAnonymousId + "|" + token + "|" + (DateTimeOffset.Now.ToUnixTimeSeconds() + 1);
+                encryptedRequest = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, encryptedRequest, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
+                string responseWallet = await ProceedTokenRequestAsync("http://" + getSeedNodeRandom + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/" + ClassConnectorSettingEnumeration.WalletTokenType + "|" + walletAddress + "|" + encryptedRequest);
+                var responseWalletJson = JObject.Parse(responseWallet);
+                responseWallet = responseWalletJson["result"].ToString();
+                if (responseWallet != RpcTokenNetworkNotExist)
                 {
-                    string walletRequest = responseWallet;
-                    var splitWalletRequest = walletRequest.Split(new[] { "|" }, StringSplitOptions.None);
-                    if ((long.Parse(splitWalletRequest[splitWalletRequest.Length-1]) + 10) - DateTimeOffset.Now.ToUnixTimeSeconds() < 60)
+                    responseWallet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, responseWallet, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey() + token, ClassWalletNetworkSetting.KeySize);
+                    if (responseWallet != ClassAlgoErrorEnumeration.AlgoError)
                     {
-                        if (long.Parse(splitWalletRequest[splitWalletRequest.Length - 1]) + 10 >= DateTimeOffset.Now.ToUnixTimeSeconds())
+                        string walletRequest = responseWallet;
+                        var splitWalletRequest = walletRequest.Split(new[] { "|" }, StringSplitOptions.None);
+                        if ((long.Parse(splitWalletRequest[splitWalletRequest.Length - 1]) + 10) - DateTimeOffset.Now.ToUnixTimeSeconds() < 60)
                         {
-                            ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletAnonymousUniqueId(splitWalletRequest[1]);
+                            if (long.Parse(splitWalletRequest[splitWalletRequest.Length - 1]) + 10 >= DateTimeOffset.Now.ToUnixTimeSeconds())
+                            {
+                                ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletAnonymousUniqueId(splitWalletRequest[1]);
+                            }
                         }
                     }
                 }
@@ -267,49 +330,53 @@ namespace Xiropht_Rpc_Wallet.Wallet
         {
 
             string tokenWallet = await GetWalletTokenAsync(getSeedNodeRandom, walletAddress);
-            string encryptedRequest = string.Empty;
-            if (anonymous)
+            if (tokenWallet != RpcTokenNetworkNotExist)
             {
-                encryptedRequest = ClassRpcWalletCommand.TokenAskWalletSendTransaction + "|" + tokenWallet + "|" + walletAddressTarget + "|" + amount + "|" + fee + "|1|" + DateTimeOffset.Now.ToUnixTimeSeconds();
-            }
-            else
-            {
-                encryptedRequest = ClassRpcWalletCommand.TokenAskWalletSendTransaction + "|" + tokenWallet + "|" + walletAddressTarget + "|" + amount + "|" + fee + "|0|" + DateTimeOffset.Now.ToUnixTimeSeconds();
-            }
-            encryptedRequest = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, encryptedRequest, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
-            string responseWallet = await ProceedTokenRequestAsync("http://" + getSeedNodeRandom + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/" + ClassConnectorSettingEnumeration.WalletTokenType + "|" + walletAddress + "|" + encryptedRequest);
-            var responseWalletJson = JObject.Parse(responseWallet);
-            responseWallet = responseWalletJson["result"].ToString();
-            if (responseWallet != RpcTokenNetworkNotExist)
-            {
-                responseWallet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, responseWallet, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey() + tokenWallet, ClassWalletNetworkSetting.KeySize);
-                if (responseWallet != ClassAlgoErrorEnumeration.AlgoError)
+                string encryptedRequest = string.Empty;
+                if (anonymous)
                 {
-                    string walletTransaction = responseWallet;
-                    if (responseWallet != RpcTokenNetworkNotExist)
+                    encryptedRequest = ClassRpcWalletCommand.TokenAskWalletSendTransaction + "|" + tokenWallet + "|" + walletAddressTarget + "|" + amount + "|" + fee + "|1|" + (DateTimeOffset.Now.ToUnixTimeSeconds() + 1);
+                }
+                else
+                {
+                    encryptedRequest = ClassRpcWalletCommand.TokenAskWalletSendTransaction + "|" + tokenWallet + "|" + walletAddressTarget + "|" + amount + "|" + fee + "|0|" + (DateTimeOffset.Now.ToUnixTimeSeconds() + 1);
+                }
+                encryptedRequest = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, encryptedRequest, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
+                string responseWallet = await ProceedTokenRequestAsync("http://" + getSeedNodeRandom + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/" + ClassConnectorSettingEnumeration.WalletTokenType + "|" + walletAddress + "|" + encryptedRequest);
+                ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnUpdateStatus(false);
+                var responseWalletJson = JObject.Parse(responseWallet);
+                responseWallet = responseWalletJson["result"].ToString();
+                if (responseWallet != RpcTokenNetworkNotExist)
+                {
+                    responseWallet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, responseWallet, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey() + tokenWallet, ClassWalletNetworkSetting.KeySize);
+                    if (responseWallet != ClassAlgoErrorEnumeration.AlgoError)
                     {
-                        var splitWalletTransaction = walletTransaction.Split(new[] { "|" }, StringSplitOptions.None);
-                        if ((long.Parse(splitWalletTransaction[splitWalletTransaction.Length - 1]) + 10) - DateTimeOffset.Now.ToUnixTimeSeconds() < 60)
+                        string walletTransaction = responseWallet;
+                        if (responseWallet != RpcTokenNetworkNotExist)
                         {
-                            if (long.Parse(splitWalletTransaction[splitWalletTransaction.Length - 1]) + 10 >= DateTimeOffset.Now.ToUnixTimeSeconds())
+                            var splitWalletTransaction = walletTransaction.Split(new[] { "|" }, StringSplitOptions.None);
+                            if ((long.Parse(splitWalletTransaction[splitWalletTransaction.Length - 1]) + 10) - DateTimeOffset.Now.ToUnixTimeSeconds() < 60)
                             {
-                                ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletBalance(splitWalletTransaction[1]);
-                                ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletPendingBalance(splitWalletTransaction[2]);
-                                ClassConsole.ConsoleWriteLine("Send transaction response " + splitWalletTransaction[0] + " from wallet address " + walletAddress + " of amount " + amount + " " + ClassConnectorSetting.CoinNameMin + " fee " + fee + " " + ClassConnectorSetting.CoinNameMin + " transaction hash: " + splitWalletTransaction[3] + "to target -> " + walletAddressTarget, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
-                                ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnSendTransactionStatus(false);
-                                return splitWalletTransaction[0] + "|" + splitWalletTransaction[3];
+                                if (long.Parse(splitWalletTransaction[splitWalletTransaction.Length - 1]) + 10 >= DateTimeOffset.Now.ToUnixTimeSeconds())
+                                {
+                                    ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletBalance(splitWalletTransaction[1]);
+                                    ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletPendingBalance(splitWalletTransaction[2]);
+                                    ClassConsole.ConsoleWriteLine("Send transaction response " + splitWalletTransaction[0] + " from wallet address " + walletAddress + " of amount " + amount + " " + ClassConnectorSetting.CoinNameMin + " fee " + fee + " " + ClassConnectorSetting.CoinNameMin + " transaction hash: " + splitWalletTransaction[3] + "to target -> " + walletAddressTarget, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+                                    ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnSendTransactionStatus(false);
+                                    return splitWalletTransaction[0] + "|" + splitWalletTransaction[3];
+                                }
+                                return splitWalletTransaction[0] + "|expired_packet";
                             }
-                            return splitWalletTransaction[0] + "|expired_packet";
+                        }
+                        else
+                        {
+                            return ClassRpcWalletCommand.SendTokenTransactionBusy + "|None";
                         }
                     }
                     else
                     {
                         return ClassRpcWalletCommand.SendTokenTransactionBusy + "|None";
                     }
-                }
-                else
-                {
-                    return ClassRpcWalletCommand.SendTokenTransactionBusy + "|None";
                 }
             }
 
@@ -325,11 +392,12 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         private static async Task<string> ProceedTokenRequestAsync(string url)
         {
+
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.AutomaticDecompression = DecompressionMethods.GZip;
             request.ServicePoint.Expect100Continue = false;
             request.KeepAlive = false;
-            request.Timeout = 2000;
+            request.Timeout = 100;
             request.UserAgent = ClassConnectorSetting.CoinName + " RPC Wallet - " + Assembly.GetExecutingAssembly().GetName().Version + "R";
             string responseContent = string.Empty;
             using (HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync())
@@ -337,12 +405,13 @@ namespace Xiropht_Rpc_Wallet.Wallet
             using (StreamReader reader = new StreamReader(stream))
             {
                 string line = string.Empty;
-                while((line = await reader.ReadLineAsync()) != null)
+                while ((line = await reader.ReadLineAsync()) != null)
                 {
                     responseContent += line;
                 }
             }
             return responseContent;
+
         }
 
         /// <summary>
@@ -362,9 +431,10 @@ namespace Xiropht_Rpc_Wallet.Wallet
             }
             if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(walletAddress))
             {
-                if (!ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletOnSendTransactionStatus())
+                if (!ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletUpdateStatus() && !ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletOnSendTransactionStatus())
                 {
                     ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnSendTransactionStatus(true);
+                    ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnUpdateStatus(true);
                     decimal balanceFromDatabase = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletBalance().Replace(".", ","), NumberStyles.Currency, Program.GlobalCultureInfo);
                     decimal balanceFromRequest = decimal.Parse(amount.Replace(".", ","), NumberStyles.Currency, Program.GlobalCultureInfo);
                     decimal feeFromRequest = decimal.Parse(fee.Replace(".", ","), NumberStyles.Currency, Program.GlobalCultureInfo);
@@ -384,6 +454,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         {
                             ClassConsole.ConsoleWriteLine("Error on send transaction from wallet: " + ClassRpcDatabase.RpcDatabaseContent[walletAddress] + " exception: " + error.Message, ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
                             ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnSendTransactionStatus(false);
+                            ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnUpdateStatus(false);
                             return ClassRpcWalletCommand.SendTokenTransactionRefused + "|None";
                         }
                     }
@@ -397,19 +468,20 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         }
                         try
                         {
-                            ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnSendTransactionStatus(false);
                             return await SendWalletTransactionTokenAsync(getSeedNodeRandom, walletAddress, walletAddressTarget, amount, fee, anonymous);
                         }
                         catch (Exception error)
                         {
                             ClassConsole.ConsoleWriteLine("Error on send transaction from wallet: " + ClassRpcDatabase.RpcDatabaseContent[walletAddress] + " exception: " + error.Message, ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
                             ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnSendTransactionStatus(false);
+                            ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnUpdateStatus(false);
                             return ClassRpcWalletCommand.SendTokenTransactionRefused + "|None";
                         }
                     }
                 }
                 else
                 {
+                    ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnUpdateStatus(false);
                     return ClassRpcWalletCommand.SendTokenTransactionBusy + "|None";
                 }
             }

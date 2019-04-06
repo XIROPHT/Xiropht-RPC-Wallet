@@ -6,6 +6,7 @@ using Xiropht_Rpc_Wallet.API;
 using Xiropht_Rpc_Wallet.Database;
 using Xiropht_Rpc_Wallet.Log;
 using Xiropht_Rpc_Wallet.Remote;
+using Xiropht_Rpc_Wallet.Setting;
 using Xiropht_Rpc_Wallet.Utility;
 using Xiropht_Rpc_Wallet.Wallet;
 
@@ -103,7 +104,10 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                             case ClassConsoleCommandLineEnumeration.CommandLineExit:
                                 ClassConsole.ConsoleWriteLine("Closing RPC Wallet..", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
                                 ClassApi.StopApiHttpServer();
-                                ClassWalletUpdater.DisableAutoUpdateWallet();
+                                if (ClassRpcSetting.RpcWalletEnableRemoteNodeSync)
+                                {
+                                    ClassWalletUpdater.DisableAutoUpdateWallet();
+                                }
                                 ClassRemoteSync.StopRpcWalletToSync();
                                 ClassConsole.ConsoleWriteLine("Waiting end of save RPC Wallet Database..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
                                 while (ClassRpcDatabase.InSave)

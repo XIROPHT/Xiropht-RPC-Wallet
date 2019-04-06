@@ -250,11 +250,18 @@ namespace Xiropht_Rpc_Wallet.Log
                 ThreadAutoWriteLog.Abort();
                 GC.SuppressFinalize(ThreadAutoWriteLog);
             }
-            LogApiStreamWriter?.Close();
-            LogGeneralStreamWriter?.Close();
-            LogWalletUpdaterStreamWriter?.Close();
-            LogSyncStreamWriter?.Close();
-            LogRemoteNodeSyncStreamWriter?.Close();
+            try
+            {
+                LogApiStreamWriter?.Close();
+                LogGeneralStreamWriter?.Close();
+                LogWalletUpdaterStreamWriter?.Close();
+                LogSyncStreamWriter?.Close();
+                LogRemoteNodeSyncStreamWriter?.Close();
+            }
+            catch
+            {
+                
+            }
         }
     }
 }

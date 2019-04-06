@@ -51,7 +51,7 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                         Console.ForegroundColor = ConsoleColor.Red;
                         break;
                     case ClassConsoleColorEnumeration.IndexConsoleBlueLog:
-                        Console.ForegroundColor = ConsoleColor.Blue;
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
                         break;
                     case ClassConsoleColorEnumeration.IndexConsoleMagentaLog:
                         Console.ForegroundColor = ConsoleColor.Magenta;

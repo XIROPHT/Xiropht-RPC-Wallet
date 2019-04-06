@@ -7,6 +7,7 @@ using Xiropht_Connector_All.Utils;
 
 namespace Xiropht_Rpc_Wallet.Utility
 {
+
     public class ClassUtility
     {
         private static readonly List<string> ListOfCharacters = new List<string>
@@ -127,5 +128,7 @@ namespace Xiropht_Rpc_Wallet.Utility
             }
             return walletPassword;
         }
+
+
     }
 }
