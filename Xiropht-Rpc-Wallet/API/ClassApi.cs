@@ -475,8 +475,10 @@ namespace Xiropht_Rpc_Wallet.API
                                 var splitResult = result.Split(new[] { "|" }, StringSplitOptions.None);
                                 Dictionary<string, string> walletTransactionContent = new Dictionary<string, string>()
                                 {
-                                      {"result", splitResult[0] },
-                                      {"hash", splitResult[1].ToLower() },
+                                    {"result", splitResult[0] },
+                                    {"hash", splitResult[1].ToLower() },
+                                    {"wallet_balance", ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletBalance() },
+                                    {"wallet_pending_balance", ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletPendingBalance() }
                                 };
                                 await BuildAndSendHttpPacketAsync(string.Empty, true, walletTransactionContent);
                             }
@@ -486,8 +488,10 @@ namespace Xiropht_Rpc_Wallet.API
                                 var splitResult = result.Split(new[] { "|" }, StringSplitOptions.None);
                                 Dictionary<string, string> walletTransactionContent = new Dictionary<string, string>()
                                 {
-                                      {"result", splitResult[0] },
-                                      {"hash", splitResult[1].ToLower() },
+                                    {"result", splitResult[0] },
+                                    {"hash", splitResult[1].ToLower() },
+                                    {"wallet_balance", ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletBalance() },
+                                    {"wallet_pending_balance", ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletPendingBalance() }
                                 };
                                 await BuildAndSendHttpPacketAsync(string.Empty, true, walletTransactionContent);
                             }
