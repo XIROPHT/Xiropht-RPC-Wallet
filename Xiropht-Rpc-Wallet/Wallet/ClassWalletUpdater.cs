@@ -106,7 +106,20 @@ namespace Xiropht_Rpc_Wallet.Wallet
 #endif
                         try
                         {
-                            await GetWalletBalanceTokenAsync(getSeedNodeRandom, walletAddress);
+                            if(!await GetWalletBalanceTokenAsync(getSeedNodeRandom, walletAddress))
+                            {
+                                ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(0);
+#if DEBUG
+                                Debug.WriteLine("Wallet: " + walletAddress + " update failed.");
+#endif
+                            }
+                            else
+                            {
+                                ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds() + ClassRpcSetting.WalletUpdateInterval);
+#if DEBUG
+                                Debug.WriteLine("Wallet: " + walletAddress + " updated successfully.");
+#endif
+                            }
                         }
                         catch (Exception error)
                         {
@@ -119,7 +132,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         Debug.WriteLine("Wallet: " + walletAddress + " updated in: " + stopwatch.ElapsedMilliseconds + " ms.");
 #endif
                         ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnUpdateStatus(false);
-                        ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds() + ClassRpcSetting.WalletUpdateInterval);
+
                     });
                     task.Wait(ClassRpcSetting.WalletMaxKeepAliveUpdate * 1000);
                 }
@@ -210,7 +223,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="token"></param>
         /// <param name="getSeedNodeRandom"></param>
         /// <param name="walletAddress"></param>
-        public static async Task GetWalletBalanceTokenAsync(string getSeedNodeRandom, string walletAddress)
+        public static async Task<bool> GetWalletBalanceTokenAsync(string getSeedNodeRandom, string walletAddress)
         {
             string token = await GetWalletTokenAsync(getSeedNodeRandom, walletAddress);
             if (token != RpcTokenNetworkNotExist)
@@ -235,6 +248,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                                 ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletPendingBalance(splitWalletBalance[2]);
                                 ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletUniqueId(splitWalletBalance[3]);
                                 ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletAnonymousUniqueId(splitWalletBalance[4]);
+                                return true;
                             }
                             else
                             {
@@ -248,6 +262,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     }
                 }
             }
+            return false;
         }
 
 

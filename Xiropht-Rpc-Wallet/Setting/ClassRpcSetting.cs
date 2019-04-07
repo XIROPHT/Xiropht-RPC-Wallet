@@ -25,6 +25,7 @@ namespace Xiropht_Rpc_Wallet.Setting
     public class ClassRpcSetting
     {
         private const string RpcWalletSettingFile = "\\config.ini";
+        private const int RpcApiKeyMinSize = 8;
 
         public static int RpcWalletApiPort = 8000; // RPC Wallet API Default port.
 
@@ -129,6 +130,10 @@ namespace Xiropht_Rpc_Wallet.Setting
                                                         if (splitLine.Length > 1)
                                                         {
                                                             RpcWalletApiKeyRequestEncryption = splitLine[1];
+                                                            if (RpcWalletApiKeyRequestEncryption.Length < RpcApiKeyMinSize)
+                                                            {
+                                                                ClassConsole.ConsoleWriteLine("Warning the current API Key encryption size is less than " + RpcApiKeyMinSize + " characters required by the salt system of encryption !", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
+                                                            }
                                                         }
                                                         break;
                                                     case ClassRpcSettingEnumeration.SettingEnableRemoteNodeSync:
@@ -260,8 +265,13 @@ namespace Xiropht_Rpc_Wallet.Setting
             yourChoose = Console.ReadLine().ToLower() == "y";
             if (yourChoose)
             {
-                ClassConsole.ConsoleWriteLine("Write your key: ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+                ClassConsole.ConsoleWriteLine("Write your API Key (" + RpcApiKeyMinSize + " characters minimum required by the salt encryption system.): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
                 RpcWalletApiKeyRequestEncryption = Console.ReadLine();
+                while(RpcWalletApiKeyRequestEncryption.Length < RpcApiKeyMinSize)
+                {
+                    ClassConsole.ConsoleWriteLine("Your API Key characters lenght is less than " + RpcApiKeyMinSize + " characters (Minimum required by the salt encryption system.), please write another one: ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                    RpcWalletApiKeyRequestEncryption = Console.ReadLine();
+                }
             }
             ClassConsole.ConsoleWriteLine("Do you want to use a remote node for sync transactions of your wallets? [Y/N]", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
             RpcWalletEnableRemoteNodeSync = Console.ReadLine().ToLower() == "y";
@@ -301,7 +311,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                     }
                 }
                 settingWriter.WriteLine(host);
-                settingWriter.WriteLine("// The key for encrypt request to receive/sent on the API.");
+                settingWriter.WriteLine("// The key for encrypt request to receive/sent on the API. ("+RpcApiKeyMinSize+" characters minimum required by the salt encryption system.)");
                 settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiKeyRequestEncryption + "=" + RpcWalletApiKeyRequestEncryption);
                 settingWriter.WriteLine("");
 
