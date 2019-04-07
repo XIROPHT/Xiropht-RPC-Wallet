@@ -50,7 +50,6 @@ namespace Xiropht_Rpc_Wallet.API
         private static bool ListenApiHttpConnectionStatus;
         private static Thread ThreadListenApiHttpConnection;
         private static TcpListener ListenerApiHttpConnection;
-        private static PriorityScheduler PrioritySchedulerApi;
         public const int MaxKeepAlive = 30;
 
         /// <summary>
@@ -58,7 +57,6 @@ namespace Xiropht_Rpc_Wallet.API
         /// </summary>
         public static void StartApiHttpServer()
         {
-            PrioritySchedulerApi = new PriorityScheduler(ThreadPriority.Lowest);
             ListenApiHttpConnectionStatus = true;
             if (ClassRpcSetting.RpcWalletApiPort <= 0) // Not selected or invalid
             {
@@ -83,7 +81,7 @@ namespace Xiropht_Rpc_Wallet.API
                             {
                                 await clientApiHttpObject.StartHandleClientHttpAsync();
                             }
-                        }, CancellationToken.None, TaskCreationOptions.None, PrioritySchedulerApi).ConfigureAwait(false);
+                        }, CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, PriorityScheduler.AboveNormal).ConfigureAwait(false);
                     }
                     catch
                     {
