@@ -132,7 +132,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                                                             RpcWalletApiKeyRequestEncryption = splitLine[1];
                                                             if (RpcWalletApiKeyRequestEncryption.Length < RpcApiKeyMinSize)
                                                             {
-                                                                ClassConsole.ConsoleWriteLine("Warning the current API Key encryption size is less than " + RpcApiKeyMinSize + " characters required by the salt system of encryption !", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
+                                                                ClassConsole.ConsoleWriteLine("Warning the current API Key encryption length is less than " + RpcApiKeyMinSize + " characters required by the salt system of encryption !", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
                                                             }
                                                         }
                                                         break;
@@ -269,7 +269,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                 RpcWalletApiKeyRequestEncryption = Console.ReadLine();
                 while(RpcWalletApiKeyRequestEncryption.Length < RpcApiKeyMinSize)
                 {
-                    ClassConsole.ConsoleWriteLine("Your API Key characters lenght is less than " + RpcApiKeyMinSize + " characters (Minimum required by the salt encryption system.), please write another one: ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                    ClassConsole.ConsoleWriteLine("Your API Key characters length is less than " + RpcApiKeyMinSize + " characters (Minimum required by the salt encryption system.), please write another one: ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
                     RpcWalletApiKeyRequestEncryption = Console.ReadLine();
                 }
             }
