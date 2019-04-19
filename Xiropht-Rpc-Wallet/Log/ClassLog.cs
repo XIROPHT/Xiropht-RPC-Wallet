@@ -83,39 +83,39 @@ namespace Xiropht_Rpc_Wallet.Log
         /// </summary>
         private static bool LogInitializationFile()
         {
-            if (Directory.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogDirectory)) == false)
+            if (Directory.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogDirectory)) == false)
             {
-                Directory.CreateDirectory(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogDirectory));
+                Directory.CreateDirectory(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogDirectory));
                 return false;
             }
 
-            if (!File.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogGeneral)))
+            if (!File.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogGeneral)))
             {
-                File.Create(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogGeneral)).Close();
+                File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogGeneral)).Close();
                 return false;
             }
 
-            if (!File.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater)))
+            if (!File.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater)))
             {
-                File.Create(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater)).Close();
+                File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater)).Close();
                 return false;
             }
 
-            if (!File.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogApi)))
+            if (!File.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogApi)))
             {
-                File.Create(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogApi)).Close();
+                File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogApi)).Close();
                 return false;
             }
 
-            if (!File.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogSync)))
+            if (!File.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogSync)))
             {
-                File.Create(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogSync)).Close();
+                File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogSync)).Close();
                 return false;
             }
 
-            if (!File.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync)))
+            if (!File.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync)))
             {
-                File.Create(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync)).Close();
+                File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync)).Close();
                 return false;
             }
 
@@ -134,11 +134,11 @@ namespace Xiropht_Rpc_Wallet.Log
             LogRemoteNodeSyncStreamWriter?.Close();
 
 
-            LogGeneralStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogGeneral), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogWalletUpdaterStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogApiStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogApi), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogRemoteNodeSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            LogGeneralStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogGeneral), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            LogWalletUpdaterStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            LogApiStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogApi), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            LogSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            LogRemoteNodeSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
 
         }
 

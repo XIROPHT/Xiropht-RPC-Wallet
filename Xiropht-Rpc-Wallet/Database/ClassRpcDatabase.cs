@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Xiropht_Connector_All.Utils;
 using Xiropht_Connector_All.Wallet;
 using Xiropht_Rpc_Wallet.ConsoleObject;
-using Xiropht_Rpc_Wallet.Threading;
 using Xiropht_Rpc_Wallet.Utility;
 using Xiropht_Rpc_Wallet.Wallet;
 
@@ -44,9 +43,9 @@ namespace Xiropht_Rpc_Wallet.Database
             RpcDatabaseContent = new Dictionary<string, ClassWalletObject>();
             try
             {
-                if (File.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile)))
+                if (File.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile)))
                 {
-                    using (FileStream fs = File.Open(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (FileStream fs = File.Open(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
                         using (BufferedStream bs = new BufferedStream(fs))
                         {
@@ -122,7 +121,7 @@ namespace Xiropht_Rpc_Wallet.Database
                     }
                     catch
                     {
-                        RpcDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
+                        RpcDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
 
                     }
                 }

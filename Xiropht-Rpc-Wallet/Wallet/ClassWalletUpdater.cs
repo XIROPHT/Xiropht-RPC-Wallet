@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -46,15 +47,15 @@ namespace Xiropht_Rpc_Wallet.Wallet
 
                         try
                         {
-                            string getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[0];
+                            string getSeedNodeRandom = string.Empty;
                             while (!await CheckTcp.CheckTcpClientAsync(getSeedNodeRandom, ClassConnectorSetting.SeedNodeTokenPort))
                             {
 #if DEBUG
-                                                     Debug.WriteLine("Seed Node host: " + getSeedNodeRandom + " is dead, check another..");
+                                Debug.WriteLine("Seed Node host: " + getSeedNodeRandom + " is dead, check another..");
 #endif
                                 if (ClassConnectorSetting.SeedNodeIp.Count > 1)
                                 {
-                                    getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)];
+                                    getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
                                 }
                                 if (Program.Exit)
                                 {
@@ -164,7 +165,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public static async Task UpdateWallet(string walletAddress)
         {
-            string getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[0];
+            string getSeedNodeRandom = string.Empty;
             while (!await CheckTcp.CheckTcpClientAsync(getSeedNodeRandom, ClassConnectorSetting.SeedNodeTokenPort))
             {
 #if DEBUG
@@ -172,7 +173,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
 #endif
                 if (ClassConnectorSetting.SeedNodeIp.Count > 1)
                 {
-                    getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)];
+                    getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
                 }
                 if (Program.Exit)
                 {
@@ -311,7 +312,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                                 {
                                     ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletBalance(splitWalletTransaction[1]);
                                     ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletPendingBalance(splitWalletTransaction[2]);
-                                    ClassConsole.ConsoleWriteLine("Send transaction response " + splitWalletTransaction[0] + " from wallet address " + walletAddress + " of amount " + amount + " " + ClassConnectorSetting.CoinNameMin + " fee " + fee + " " + ClassConnectorSetting.CoinNameMin + " transaction hash: " + splitWalletTransaction[3] + "to target -> " + walletAddressTarget, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+                                    ClassConsole.ConsoleWriteLine("Send transaction response " + splitWalletTransaction[0] + " from wallet address " + walletAddress + " of amount " + amount + " " + ClassConnectorSetting.CoinNameMin + " fee " + fee + " " + ClassConnectorSetting.CoinNameMin + " transaction hash: " + splitWalletTransaction[3] + " to target -> " + walletAddressTarget, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
                                     ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnSendTransactionStatus(false);
                                     return splitWalletTransaction[0] + "|" + splitWalletTransaction[3];
                                 }
@@ -368,7 +369,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         {
             if (anonymous)
             {
-                ClassConsole.ConsoleWriteLine("Attempt to send transaction from wallet address " + walletAddress + " of amount " + amount + " " + ClassConnectorSetting.CoinNameMin + " fee " + fee + " " + ClassConnectorSetting.CoinNameMin + " to target -> " + walletAddressTarget, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+                ClassConsole.ConsoleWriteLine("Attempt to send an anonymous transaction from wallet address " + walletAddress + " of amount " + amount + " " + ClassConnectorSetting.CoinNameMin + " fee " + fee + " " + ClassConnectorSetting.CoinNameMin + " and anonymous fee option of: "+ClassConnectorSetting.MinimumWalletTransactionAnonymousFee+" "+ClassConnectorSetting.CoinNameMin+" to target -> " + walletAddressTarget, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
             }
             else
             {
@@ -385,10 +386,10 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     if (!anonymous)
                     {
                         ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds());
-                        string getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[0];
+                        string getSeedNodeRandom = string.Empty;
                         if (ClassConnectorSetting.SeedNodeIp.Count > 1)
                         {
-                            getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)];
+                            getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
                         }
                         try
                         {
@@ -404,10 +405,10 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     else
                     {
                         ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds());
-                        string getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[0];
+                        string getSeedNodeRandom = string.Empty;
                         if (ClassConnectorSetting.SeedNodeIp.Count > 1)
                         {
-                            getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp[ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)];
+                            getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
                         }
                         try
                         {
