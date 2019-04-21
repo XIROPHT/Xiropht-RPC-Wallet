@@ -47,7 +47,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
 
                         try
                         {
-                            string getSeedNodeRandom = string.Empty;
+                            string getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
                             while (!await CheckTcp.CheckTcpClientAsync(getSeedNodeRandom, ClassConnectorSetting.SeedNodeTokenPort))
                             {
 #if DEBUG
@@ -165,7 +165,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public static async Task UpdateWallet(string walletAddress)
         {
-            string getSeedNodeRandom = string.Empty;
+            string getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
             while (!await CheckTcp.CheckTcpClientAsync(getSeedNodeRandom, ClassConnectorSetting.SeedNodeTokenPort))
             {
 #if DEBUG
@@ -386,7 +386,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     if (!anonymous)
                     {
                         ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds());
-                        string getSeedNodeRandom = string.Empty;
+                        string getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
                         if (ClassConnectorSetting.SeedNodeIp.Count > 1)
                         {
                             getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
@@ -405,7 +405,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     else
                     {
                         ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds());
-                        string getSeedNodeRandom = string.Empty;
+                        string getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
                         if (ClassConnectorSetting.SeedNodeIp.Count > 1)
                         {
                             getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(ClassUtils.GetRandomBetween(0, ClassConnectorSetting.SeedNodeIp.Count - 1)).Key;
