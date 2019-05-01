@@ -321,11 +321,13 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         }
                         else
                         {
+                            ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnSendTransactionStatus(false);
                             return ClassRpcWalletCommand.SendTokenTransactionBusy + "|None";
                         }
                     }
                     else
                     {
+                        ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnSendTransactionStatus(false);
                         return ClassRpcWalletCommand.SendTokenTransactionBusy + "|None";
                     }
                 }
