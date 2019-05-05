@@ -77,7 +77,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                                             try
                                             {
 #if DEBUG
-                                                Debug.WriteLine("Config line read: " + splitLine[0] + " argument read: " + splitLine[1]);
+                                                Console.WriteLine("Config line read: " + splitLine[0] + " argument read: " + splitLine[1]);
 #endif
                                                 switch (splitLine[0])
                                                 {
