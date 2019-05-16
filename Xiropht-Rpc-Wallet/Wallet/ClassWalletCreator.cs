@@ -5,6 +5,7 @@ using Xiropht_Connector_All.Seed;
 using Xiropht_Connector_All.Setting;
 using Xiropht_Connector_All.Utils;
 using Xiropht_Connector_All.Wallet;
+using Xiropht_Rpc_Wallet.ConsoleObject;
 using Xiropht_Rpc_Wallet.Database;
 
 namespace Xiropht_Rpc_Wallet.Wallet
@@ -55,6 +56,8 @@ namespace Xiropht_Rpc_Wallet.Wallet
         public string WalletPhase;
         private string CertificateConnection;
         private string WalletPassword;
+        private string WalletPrivateKey;
+        private string WalletAddress;
         public bool WalletInPendingCreate;
         public string WalletCreateResult;
         public string WalletAddressResult;
@@ -75,12 +78,22 @@ namespace Xiropht_Rpc_Wallet.Wallet
             WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorPending;
         }
 
-        public async Task<bool> StartWalletConnectionAsync(string walletPhase, string walletPassword)
+        /// <summary>
+        /// Start to connect on the blockchain wallet network.
+        /// </summary>
+        /// <param name="walletPhase"></param>
+        /// <param name="walletPassword"></param>
+        /// <param name="privatekey"></param>
+        /// <param name="walletAddress"></param>
+        /// <returns></returns>
+        public async Task<bool> StartWalletConnectionAsync(string walletPhase, string walletPassword, string privatekey = null, string walletAddress = null)
         {
-           
+
             WalletInPendingCreate = true;
             WalletPassword = walletPassword;
             WalletPhase = walletPhase;
+            WalletPrivateKey = privatekey;
+            WalletAddress = walletAddress;
             if (!await InitlizationWalletConnectionAsync(walletPhase, WalletPassword))
             {
                 FullDisconnection();
@@ -111,8 +124,30 @@ namespace Xiropht_Rpc_Wallet.Wallet
                                 return false;
                             }
                             break;
-                    }
+                        case ClassWalletPhase.Restore:
+                            using (ClassWalletRestoreFunctions walletRestoreFunctionsObject = new ClassWalletRestoreFunctions())
+                            {
+                                string encryptedQrCodeRestoreRequest = walletRestoreFunctionsObject.GenerateQRCodeKeyEncryptedRepresentation(privatekey, walletPassword);
 
+                                if (encryptedQrCodeRestoreRequest != null)
+                                {
+                                    Thread.Sleep(1000);
+                                    if (!await SendPacketBlockchainNetworkSeedNodeMode(ClassWalletCommand.ClassWalletSendEnumeration.AskPhase + "|" + encryptedQrCodeRestoreRequest))
+                                    {
+                                        FullDisconnection();
+                                        WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorError;
+                                        return false;
+                                    }
+                                }
+                                else
+                                {
+                                    FullDisconnection();
+                                    WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorError;
+                                    return false;
+                                }
+                            }
+                            break;
+                    }
                 }
             }
             return true;
@@ -163,6 +198,9 @@ namespace Xiropht_Rpc_Wallet.Wallet
             SeedNodeConnector?.Dispose();
 
             WalletInPendingCreate = false;
+            WalletAddress = string.Empty;
+            WalletPassword = string.Empty;
+            WalletPrivateKey = string.Empty;
         }
 
         /// <summary>
@@ -180,13 +218,27 @@ namespace Xiropht_Rpc_Wallet.Wallet
         }
 
         /// <summary>
+        /// Send packet to the blockchain network, respecting encryption of seed nodes.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <returns></returns>
+        public async Task<bool> SendPacketBlockchainNetworkSeedNodeMode(string packet)
+        {
+            if (!await SeedNodeConnector.SendPacketToSeedNodeAsync(packet, CertificateConnection, false, true))
+            {
+                WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorError;
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
         /// Send packet to the blockchain network.
         /// </summary>
         /// <param name="packet"></param>
         /// <returns></returns>
         public async Task<bool> SendPacketBlockchainNetworkAsync(string packet, string certificate, bool isEncrypted)
         {
-
             if (!await WalletConnector.SendPacketWallet(packet, certificate, isEncrypted))
             {
                 WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorError;
@@ -210,7 +262,6 @@ namespace Xiropht_Rpc_Wallet.Wallet
                 while (SeedNodeConnector.ReturnStatus())
                 {
                     string packetWallet = await WalletConnector.ListenPacketWalletAsync(CertificateConnection, true);
-
                     if (packetWallet.Contains("*")) // Character separator.
                     {
                         var splitPacket = packetWallet.Split(new[] { "*" }, StringSplitOptions.None);
@@ -228,7 +279,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                                             break;
                                         }
 
-                                        await Task.Run(() => HandlePacketBlockchainNetworkWallet(packetEach.Replace("*", ""))).ConfigureAwait(false);
+                                        await Task.Factory.StartNew(() => HandlePacketBlockchainNetworkWallet(packetEach.Replace("*", "")), CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current).ConfigureAwait(false);
                                     }
                                 }
                             }
@@ -242,7 +293,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                             break;
                         }
 
-                        await Task.Run(() => HandlePacketBlockchainNetworkWallet(packetWallet)).ConfigureAwait(false);
+                        await Task.Factory.StartNew(() => HandlePacketBlockchainNetworkWallet(packetWallet), CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current).ConfigureAwait(false);
 
                     }
                 }
@@ -269,16 +320,14 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     FullDisconnection();
                     break;
                 case ClassWalletCommand.ClassWalletReceiveEnumeration.CreatePhase:
-                    string walletDataCreate = ClassUtils.DecompressData(splitPacket[1]);
                     if (splitPacket[1] == ClassAlgoErrorEnumeration.AlgoError)
                     {
-                        GC.SuppressFinalize(walletDataCreate);
                         WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorError;
                         FullDisconnection();
                     }
                     else
                     {
-                        var decryptWalletDataCreate = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, walletDataCreate, WalletPassword, ClassWalletNetworkSetting.KeySize);
+                        var decryptWalletDataCreate = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, splitPacket[1], WalletPassword, ClassWalletNetworkSetting.KeySize);
                         if (decryptWalletDataCreate == ClassAlgoErrorEnumeration.AlgoError)
                         {
                             WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorError;
@@ -286,7 +335,8 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         }
                         else
                         {
-                            var splitDecryptWalletDataCreate = decryptWalletDataCreate.Split(new[] { "\n" }, StringSplitOptions.None);
+                            string walletDataCreate = ClassUtils.DecompressData(decryptWalletDataCreate);
+                            var splitDecryptWalletDataCreate = walletDataCreate.Split(new[] { "\n" }, StringSplitOptions.None);
                             var pinWallet = splitPacket[2];
                             var walletAddress = splitDecryptWalletDataCreate[0];
                             var publicKey = splitDecryptWalletDataCreate[2];
@@ -295,6 +345,48 @@ namespace Xiropht_Rpc_Wallet.Wallet
                             ClassRpcDatabase.InsertNewWalletAsync(walletAddress, publicKey, privateKey, pinWallet, WalletPassword);
                             WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorSuccess;
                             FullDisconnection();
+                        }
+                    }
+                    break;
+                case ClassWalletCommand.ClassWalletReceiveEnumeration.WalletAskSuccess:
+                    string walletDataCreation = splitPacket[1];
+
+                    if (walletDataCreation == ClassAlgoErrorEnumeration.AlgoError)
+                    {
+                        ClassConsole.ConsoleWriteLine("Restoring wallet failed, please try again later.", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                        WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorError;
+                        FullDisconnection();
+                    }
+                    else
+                    {
+                        var decryptWalletDataCreation = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, walletDataCreation, WalletPrivateKey, ClassWalletNetworkSetting.KeySize);
+                        if (decryptWalletDataCreation == ClassAlgoErrorEnumeration.AlgoError)
+                        {
+                            ClassConsole.ConsoleWriteLine("Restoring wallet failed, please try again later.", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                            WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorError;
+                            FullDisconnection();
+                        }
+                        else
+                        {
+                            var splitWalletData = decryptWalletDataCreation.Split(new[] { "\n" }, StringSplitOptions.None);
+                            var publicKey = splitWalletData[2];
+                            var privateKey = splitWalletData[3];
+                            var pinCode = splitWalletData[4];
+                            if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(WalletAddress))
+                            {
+                                ClassRpcDatabase.RpcDatabaseContent[WalletAddress].SetWalletAddress(WalletAddress);
+                                ClassRpcDatabase.RpcDatabaseContent[WalletAddress].SetWalletPublicKey(publicKey);
+                                ClassRpcDatabase.RpcDatabaseContent[WalletAddress].SetWalletPrivateKey(privateKey);
+                                ClassRpcDatabase.RpcDatabaseContent[WalletAddress].SetWalletPinCode(pinCode);
+                                WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorSuccess;
+                                FullDisconnection();
+                            }
+                            else
+                            {
+                                ClassConsole.ConsoleWriteLine("Restoring wallet failed, wallet address: "+WalletAddress+" not exist inside database, please try again later.", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                                WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorError;
+                                FullDisconnection();
+                            }
                         }
                     }
                     break;

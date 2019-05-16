@@ -15,7 +15,9 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
     public class ClassConsoleCommandLineEnumeration
     {
         public const string CommandLineCreateWallet = "createwallet";
+        public const string CommandLineRestoreWallet = "restorewallet";
         public const string CommandLineLogLevel = "loglevel";
+        public const string CommandLineSaveWallet = "savewallet";
         public const string CommandLineHelp = "help";
         public const string CommandLineExit = "exit";
     }
@@ -29,7 +31,7 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
         /// </summary>
         public static void EnableConsoleCommandLine()
         {
-            ThreadConsoleCommandLine = new Thread(delegate ()
+            ThreadConsoleCommandLine = new Thread(async delegate ()
             {
                 while (!Program.Exit)
                 {
@@ -42,39 +44,102 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                             case ClassConsoleCommandLineEnumeration.CommandLineHelp:
                                 ClassConsole.ConsoleWriteLine(ClassConsoleCommandLineEnumeration.CommandLineHelp + " -> show list of command lines.", ClassConsoleColorEnumeration.IndexConsoleMagentaLog, Program.LogLevel);
                                 ClassConsole.ConsoleWriteLine(ClassConsoleCommandLineEnumeration.CommandLineCreateWallet + " -> permit to create a new wallet manualy.", ClassConsoleColorEnumeration.IndexConsoleMagentaLog, Program.LogLevel);
-                                ClassConsole.ConsoleWriteLine(ClassConsoleCommandLineEnumeration.CommandLineLogLevel + " -> change log level. Max log level: "+ClassConsole.MaxLogLevel, ClassConsoleColorEnumeration.IndexConsoleMagentaLog, Program.LogLevel);
-
+                                ClassConsole.ConsoleWriteLine(ClassConsoleCommandLineEnumeration.CommandLineRestoreWallet + " -> permit to restore a wallet manualy. Syntax: " + ClassConsoleCommandLineEnumeration.CommandLineRestoreWallet + " wallet_address", ClassConsoleColorEnumeration.IndexConsoleMagentaLog, Program.LogLevel);
+                                ClassConsole.ConsoleWriteLine(ClassConsoleCommandLineEnumeration.CommandLineSaveWallet + " -> permit to save manually the database of wallets.", ClassConsoleColorEnumeration.IndexConsoleMagentaLog, Program.LogLevel);
+                                ClassConsole.ConsoleWriteLine(ClassConsoleCommandLineEnumeration.CommandLineLogLevel + " -> change log level. Max log level: " + ClassConsole.MaxLogLevel, ClassConsoleColorEnumeration.IndexConsoleMagentaLog, Program.LogLevel);
                                 break;
                             case ClassConsoleCommandLineEnumeration.CommandLineCreateWallet:
-                                new Thread(async delegate ()
-                                {
-                                    using (var walletCreatorObject = new ClassWalletCreator())
-                                    {
 
+                                using (var walletCreatorObject = new ClassWalletCreator())
+                                {
+
+                                    new Thread(async delegate ()
+                                    {
                                         if (!await walletCreatorObject.StartWalletConnectionAsync(ClassWalletPhase.Create, ClassUtility.MakeRandomWalletPassword()))
                                         {
                                             ClassConsole.ConsoleWriteLine("RPC Wallet cannot create a new wallet.", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
                                         }
-                                        await Task.Run(async delegate
+                                    }).Start();
+
+
+                                    while (walletCreatorObject.WalletCreateResult == ClassWalletCreatorEnumeration.WalletCreatorPending)
+                                    {
+                                        Thread.Sleep(100);
+                                    }
+                                    switch (walletCreatorObject.WalletCreateResult)
+                                    {
+                                        case ClassWalletCreatorEnumeration.WalletCreatorError:
+                                            ClassConsole.ConsoleWriteLine("RPC Wallet cannot create a new wallet.", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
+                                            break;
+                                        case ClassWalletCreatorEnumeration.WalletCreatorSuccess:
+                                            ClassConsole.ConsoleWriteLine("RPC Wallet successfully create a new wallet.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
+                                            ClassConsole.ConsoleWriteLine("New wallet address generated: " + walletCreatorObject.WalletAddressResult, ClassConsoleColorEnumeration.IndexConsoleBlueLog, Program.LogLevel);
+                                            break;
+                                    }
+                                }
+
+                                break;
+                            case ClassConsoleCommandLineEnumeration.CommandLineRestoreWallet:
+
+                                if (splitCommandLine.Length < 2)
+                                {
+                                    ClassConsole.ConsoleWriteLine("Please, put the wallet address to restore.", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
+                                }
+                                else
+                                {
+                                    if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(splitCommandLine[1]))
+                                    {
+                                        using (var walletCreatorObject = new ClassWalletCreator())
                                         {
+
+                                            new Thread(async delegate ()
+                                            {
+                                                if (!await walletCreatorObject.StartWalletConnectionAsync(ClassWalletPhase.Restore, ClassUtility.MakeRandomWalletPassword(), ClassRpcDatabase.RpcDatabaseContent[splitCommandLine[1]].GetWalletPrivateKey(), splitCommandLine[1]))
+                                                {
+                                                    ClassConsole.ConsoleWriteLine("RPC Wallet cannot restore your wallet: " + splitCommandLine[1], ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
+                                                }
+                                            }).Start();
+
+
                                             while (walletCreatorObject.WalletCreateResult == ClassWalletCreatorEnumeration.WalletCreatorPending)
                                             {
-                                                await Task.Delay(100);
+                                                Thread.Sleep(100);
                                             }
                                             switch (walletCreatorObject.WalletCreateResult)
                                             {
                                                 case ClassWalletCreatorEnumeration.WalletCreatorError:
-                                                    ClassConsole.ConsoleWriteLine("RPC Wallet cannot create a new wallet.", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
+                                                    ClassConsole.ConsoleWriteLine("RPC Wallet cannot restore a wallet: " + splitCommandLine[1], ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
                                                     break;
                                                 case ClassWalletCreatorEnumeration.WalletCreatorSuccess:
-                                                    ClassConsole.ConsoleWriteLine("RPC Wallet successfully create a new wallet.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
-                                                    ClassConsole.ConsoleWriteLine("New wallet address generated: " + walletCreatorObject.WalletAddressResult, ClassConsoleColorEnumeration.IndexConsoleBlueLog, Program.LogLevel);
+                                                    ClassConsole.ConsoleWriteLine("RPC Wallet successfully restore wallet: " + splitCommandLine[1], ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
+                                                    ClassConsole.ConsoleWriteLine("RPC Wallet execute save the database of wallets..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
+                                                    if(await ClassRpcDatabase.SaveWholeRpcWalletDatabaseFile())
+                                                    {
+                                                        ClassConsole.ConsoleWriteLine("RPC Wallet save of the database of wallets done successfully.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
+                                                    }
+                                                    else
+                                                    {
+                                                        ClassConsole.ConsoleWriteLine("RPC Wallet save of the database of wallets failed, please retry by command line: "+ ClassConsoleCommandLineEnumeration.CommandLineSaveWallet, ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
+                                                    }
                                                     break;
                                             }
-                                        }).ConfigureAwait(false);
+                                        }
                                     }
-
-                                }).Start();
+                                    else
+                                    {
+                                        ClassConsole.ConsoleWriteLine("Please, put a valid wallet address stored on the database of your rpc wallet to restore. " + splitCommandLine[1] + " not exist.", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
+                                    }
+                                }
+                                break;
+                            case ClassConsoleCommandLineEnumeration.CommandLineSaveWallet:
+                                if (await ClassRpcDatabase.SaveWholeRpcWalletDatabaseFile())
+                                {
+                                    ClassConsole.ConsoleWriteLine("RPC Wallet save of the database of wallets done successfully.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
+                                }
+                                else
+                                {
+                                    ClassConsole.ConsoleWriteLine("RPC Wallet save of the database of wallets failed, please retry by command line: " + ClassConsoleCommandLineEnumeration.CommandLineSaveWallet, ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
+                                }
                                 break;
                             case ClassConsoleCommandLineEnumeration.CommandLineLogLevel:
                                 if (splitCommandLine.Length > 1)
@@ -102,28 +167,43 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                                 }
                                 break;
                             case ClassConsoleCommandLineEnumeration.CommandLineExit:
-                                ClassConsole.ConsoleWriteLine("Closing RPC Wallet..", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
-                                ClassApi.StopApiHttpServer();
-                                if (ClassRpcSetting.RpcWalletEnableRemoteNodeSync)
+                                new Thread(() =>
                                 {
-                                    ClassWalletUpdater.DisableAutoUpdateWallet();
-                                }
-                                ClassRemoteSync.StopRpcWalletToSync();
-                                ClassConsole.ConsoleWriteLine("Waiting end of save RPC Wallet Database..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
-                                while (ClassRpcDatabase.InSave)
-                                {
-                                    Thread.Sleep(100);
-                                }
-                                ClassConsole.ConsoleWriteLine("Waiting end of save RPC Wallet Sync Database..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
-                                while (ClassSyncDatabase.InSave)
-                                {
-                                    Thread.Sleep(100);
-                                }
-                                ClassConsole.ConsoleWriteLine("RPC Wallet is successfully stopped, press ENTER to exit.", ClassConsoleColorEnumeration.IndexConsoleBlueLog, Program.LogLevel);
-                                ClassLog.StopLogSystem();
-                                Console.ReadLine();
-                                Program.Exit = true;
-                                Environment.Exit(0);
+                                    ClassConsole.ConsoleWriteLine("Closing RPC Wallet..", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
+                                    try
+                                    {
+                                        if (ThreadConsoleCommandLine != null && (ThreadConsoleCommandLine.IsAlive || ThreadConsoleCommandLine != null))
+                                        {
+                                            ThreadConsoleCommandLine.Abort();
+                                            GC.SuppressFinalize(ThreadConsoleCommandLine);
+                                        }
+                                    }
+                                    catch
+                                    {
+
+                                    }
+                                    ClassApi.StopApiHttpServer();
+                                    if (ClassRpcSetting.RpcWalletEnableRemoteNodeSync)
+                                    {
+                                        ClassWalletUpdater.DisableAutoUpdateWallet();
+                                    }
+                                    ClassRemoteSync.StopRpcWalletToSync();
+                                    ClassConsole.ConsoleWriteLine("Waiting end of save RPC Wallet Database..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
+                                    while (ClassRpcDatabase.InSave)
+                                    {
+                                        Thread.Sleep(100);
+                                    }
+                                    ClassConsole.ConsoleWriteLine("Waiting end of save RPC Wallet Sync Database..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
+                                    while (ClassSyncDatabase.InSave)
+                                    {
+                                        Thread.Sleep(100);
+                                    }
+                                    ClassLog.StopLogSystem();
+                                    ClassConsole.ConsoleWriteLine("RPC Wallet is successfully stopped, press ENTER to exit.", ClassConsoleColorEnumeration.IndexConsoleBlueLog, Program.LogLevel);
+                                    Console.ReadLine();
+                                    Program.Exit = true;
+                                    Environment.Exit(0);
+                                }).Start();
                                 break;
                         }
                         if (Program.Exit)

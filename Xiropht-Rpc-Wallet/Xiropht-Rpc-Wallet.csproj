@@ -42,10 +42,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -54,6 +55,9 @@
     <Reference Include="System.Xml" />
     <Reference Include="Xiropht-Connector-All">
       <HintPath>..\..\Xiropht-Connector-All\Xiropht-Connector-All\bin\Release\Xiropht-Connector-All.dll</HintPath>
+    </Reference>
+    <Reference Include="zxing, Version=0.16.4.0, Culture=neutral, PublicKeyToken=4e88037ac681fe60, processorArchitecture=MSIL">
+      <HintPath>..\packages\ZXing.Net.0.16.4\lib\net461\zxing.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -72,10 +76,13 @@
     <Compile Include="ConsoleObject\ClassConsole.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Wallet\ClassWalletRestoreFunctions.cs" />
     <Compile Include="Wallet\ClassWalletUpdater.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

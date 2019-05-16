@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Xiropht_Connector_All.Setting;
 using Xiropht_Rpc_Wallet.ConsoleObject;
 using Xiropht_Rpc_Wallet.Database;
@@ -9,7 +10,10 @@ namespace Xiropht_Rpc_Wallet.Wallet
     {
         private string WalletAddress;
         private string WalletPublicKey;
+        private string WalletPassword;
         private string WalletBalance;
+        private string WalletPrivateKey;
+        private string WalletPinCode;
         private string WalletPendingBalance;
         private string WalletUniqueId;
         private string WalletAnonymousUniqueId;
@@ -17,7 +21,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         private long WalletLastUpdate;
         private List<string> WalletListOfTransaction;
         private List<string> WalletListOfAnonymousTransaction;
-        private string WalletReadLine;
+        private string WalletContentReadLine;
         private bool WalletInUpdate;
 
         /// <summary>
@@ -25,11 +29,17 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// </summary>
         /// <param name="walletAddress"></param>
         /// <param name="walletPublicKey"></param>
-        /// <param name="line">Content line of the database keep it encrypted.</param>
-        public ClassWalletObject(string walletAddress, string walletPublicKey, string line)
+        /// <param name="walletContentReadLine">Content line of the database keep it encrypted.</param>
+        public ClassWalletObject(string walletAddress, string walletPublicKey, string walletPassword, string walletPrivateKey, string walletPinCode, string walletContentReadLine)
         {
             WalletAddress = walletAddress;
             WalletPublicKey = walletPublicKey;
+            WalletPassword = walletPassword;
+            WalletPrivateKey = walletPrivateKey;
+            WalletPinCode = walletPinCode;
+#if DEBUG
+            ClassConsole.ConsoleWriteLine("ClassWalletObject - Initialize object -> Wallet Address: " + WalletAddress + " | Wallet Public Key: " + WalletPublicKey + " | Wallet Private Key: " + WalletPrivateKey + " | Wallet Password: " + walletPassword + " | Wallet Pin Code: " + walletPinCode);
+#endif
             WalletBalance = "0";
             WalletLastUpdate = 0;
             WalletPendingBalance = "0";
@@ -38,7 +48,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
             WalletOnSendingTransaction = false;
             WalletListOfTransaction = new List<string>();
             WalletListOfAnonymousTransaction = new List<string>();
-            WalletReadLine = line;
+            WalletContentReadLine = walletContentReadLine;
             WalletInUpdate = false;
         }
 
@@ -110,6 +120,51 @@ namespace Xiropht_Rpc_Wallet.Wallet
         }
 
         /// <summary>
+        /// Set the current wallet address.
+        /// </summary>
+        /// <param name="walletAddress"></param>
+        public void SetWalletAddress(string walletAddress)
+        {
+            WalletAddress = walletAddress;
+        }
+
+        /// <summary>
+        /// Set the current wallet public key.
+        /// </summary>
+        /// <param name="walletPublicKey"></param>
+        public void SetWalletPublicKey(string walletPublicKey)
+        {
+            WalletPublicKey = walletPublicKey;
+        }
+
+        /// <summary>
+        /// Set the current wallet public key.
+        /// </summary>
+        /// <param name="walletPrivateKey"></param>
+        public void SetWalletPrivateKey(string walletPrivateKey)
+        {
+            WalletPrivateKey = walletPrivateKey;
+        }
+
+        /// <summary>
+        /// Set the current wallet password.
+        /// </summary>
+        /// <param name="walletPassword"></param>
+        public void SetWalletPassword(string walletPassword)
+        {
+             WalletPassword = walletPassword;
+        }
+
+        /// <summary>
+        /// Set the current wallet pin code.
+        /// </summary>
+        /// <param name="walletPinCode"></param>
+        public void SetWalletPinCode(string walletPinCode)
+        {
+            WalletPinCode = walletPinCode;
+        }
+
+        /// <summary>
         /// Insert a transaction sync on the wallet.
         /// </summary>
         /// <param name="transaction"></param>
@@ -148,7 +203,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletReadLine()
         {
-            return WalletReadLine;
+            return WalletContentReadLine;
         }
 
         /// <summary>
@@ -204,12 +259,39 @@ namespace Xiropht_Rpc_Wallet.Wallet
         }
 
         /// <summary>
+        /// Return wallet private key.
+        /// </summary>
+        /// <returns></returns>
+        public string GetWalletPrivateKey()
+        {
+            return WalletPrivateKey;
+        }
+
+        /// <summary>
         /// Return wallet address.
         /// </summary>
         /// <returns></returns>
         public string GetWalletAddress()
         {
             return WalletAddress;
+        }
+
+        /// <summary>
+        /// Return Wallet password.
+        /// </summary>
+        /// <returns></returns>
+        public string GetWalletPassword()
+        {
+            return WalletPassword;
+        }
+
+        /// <summary>
+        /// Return wallet pin code.
+        /// </summary>
+        /// <returns></returns>
+        public string GetWalletPinCode()
+        {
+            return WalletPinCode;
         }
 
         /// <summary>

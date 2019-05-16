@@ -96,7 +96,7 @@ namespace Xiropht_Rpc_Wallet
         {
             AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args2)
             {
-                var filePath = ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + UnexpectedExceptionFile);
+                var filePath = ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + UnexpectedExceptionFile);
                 var exception = (Exception)args2.ExceptionObject;
                 using (var writer = new StreamWriter(filePath, true))
                 {
@@ -110,7 +110,7 @@ namespace Xiropht_Rpc_Wallet
                 }
 
                 Trace.TraceError(exception.StackTrace);
-                Console.WriteLine("Unexpected error catched, check the error file: " + ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + UnexpectedExceptionFile));
+                Console.WriteLine("Unexpected error catched, check the error file: " + ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + UnexpectedExceptionFile));
                 Environment.Exit(1);
 
             };
