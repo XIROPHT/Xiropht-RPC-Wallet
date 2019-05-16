@@ -45,6 +45,8 @@ Features:
  
 **Newtonsoft.Json library is used since version 0.0.0.1R for the API HTTP/HTTPS system: https://github.com/JamesNK/Newtonsoft.Json**
 
+**External library used: ZXing.Net, a QR Code generator used since version 0.0.1.6R: https://github.com/micjahn/ZXing.Net/**
+
 **Developers:**
 
 - Xiropht (Sam Segura)
