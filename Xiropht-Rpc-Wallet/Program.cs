@@ -23,6 +23,7 @@ namespace Xiropht_Rpc_Wallet
         public static bool Exit;
         public static CultureInfo GlobalCultureInfo;
         public static int LogLevel;
+        public static Thread ThreadRemoteNodeSync;
 
         static void Main(string[] args)
         {
@@ -58,7 +59,8 @@ namespace Xiropht_Rpc_Wallet
                         if (ClassRpcSetting.RpcWalletEnableRemoteNodeSync && ClassRpcSetting.RpcWalletRemoteNodeHost != string.Empty && ClassRpcSetting.RpcWalletRemoteNodePort != 0)
                         {
                             ClassConsole.ConsoleWriteLine("RPC Remote Node Sync system loading..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
-                            new Thread(async () => await ClassRemoteSync.ConnectRpcWalletToRemoteNodeSyncAsync()).Start();
+                            ThreadRemoteNodeSync = new Thread(async () => await ClassRemoteSync.ConnectRpcWalletToRemoteNodeSyncAsync());
+                            ThreadRemoteNodeSync.Start();
                         }
                         ClassConsole.ConsoleWriteLine("Enable Command Line system.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
                         ClassConsoleCommandLine.EnableConsoleCommandLine();

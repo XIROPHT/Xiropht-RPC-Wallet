@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Xiropht_Connector_All.Wallet;
@@ -36,6 +37,10 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                 while (!Program.Exit)
                 {
                     string commandLine = Console.ReadLine();
+                    if (Program.Exit)
+                    {
+                        break;
+                    }
                     try
                     {
                         var splitCommandLine = commandLine.Split(new char[0], StringSplitOptions.None);
@@ -113,13 +118,13 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                                                 case ClassWalletCreatorEnumeration.WalletCreatorSuccess:
                                                     ClassConsole.ConsoleWriteLine("RPC Wallet successfully restore wallet: " + splitCommandLine[1], ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
                                                     ClassConsole.ConsoleWriteLine("RPC Wallet execute save the database of wallets..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
-                                                    if(await ClassRpcDatabase.SaveWholeRpcWalletDatabaseFile())
+                                                    if (await ClassRpcDatabase.SaveWholeRpcWalletDatabaseFile())
                                                     {
                                                         ClassConsole.ConsoleWriteLine("RPC Wallet save of the database of wallets done successfully.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
                                                     }
                                                     else
                                                     {
-                                                        ClassConsole.ConsoleWriteLine("RPC Wallet save of the database of wallets failed, please retry by command line: "+ ClassConsoleCommandLineEnumeration.CommandLineSaveWallet, ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
+                                                        ClassConsole.ConsoleWriteLine("RPC Wallet save of the database of wallets failed, please retry by command line: " + ClassConsoleCommandLineEnumeration.CommandLineSaveWallet, ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
                                                     }
                                                     break;
                                             }
@@ -167,43 +172,33 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                                 }
                                 break;
                             case ClassConsoleCommandLineEnumeration.CommandLineExit:
-                                new Thread(() =>
+                                Program.Exit = true;
+                                ClassConsole.ConsoleWriteLine("Closing RPC Wallet..", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
+                                ClassApi.StopApiHttpServer();
+                                if (ClassRpcSetting.RpcWalletEnableRemoteNodeSync)
                                 {
-                                    ClassConsole.ConsoleWriteLine("Closing RPC Wallet..", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
-                                    try
-                                    {
-                                        if (ThreadConsoleCommandLine != null && (ThreadConsoleCommandLine.IsAlive || ThreadConsoleCommandLine != null))
-                                        {
-                                            ThreadConsoleCommandLine.Abort();
-                                            GC.SuppressFinalize(ThreadConsoleCommandLine);
-                                        }
-                                    }
-                                    catch
-                                    {
-
-                                    }
-                                    ClassApi.StopApiHttpServer();
-                                    if (ClassRpcSetting.RpcWalletEnableRemoteNodeSync)
-                                    {
-                                        ClassWalletUpdater.DisableAutoUpdateWallet();
-                                    }
-                                    ClassRemoteSync.StopRpcWalletToSync();
-                                    ClassConsole.ConsoleWriteLine("Waiting end of save RPC Wallet Database..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
-                                    while (ClassRpcDatabase.InSave)
-                                    {
-                                        Thread.Sleep(100);
-                                    }
-                                    ClassConsole.ConsoleWriteLine("Waiting end of save RPC Wallet Sync Database..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
-                                    while (ClassSyncDatabase.InSave)
-                                    {
-                                        Thread.Sleep(100);
-                                    }
-                                    ClassLog.StopLogSystem();
-                                    ClassConsole.ConsoleWriteLine("RPC Wallet is successfully stopped, press ENTER to exit.", ClassConsoleColorEnumeration.IndexConsoleBlueLog, Program.LogLevel);
-                                    Console.ReadLine();
-                                    Program.Exit = true;
-                                    Environment.Exit(0);
-                                }).Start();
+                                    ClassWalletUpdater.DisableAutoUpdateWallet();
+                                }
+                                ClassRemoteSync.StopRpcWalletToSync();
+                                if (Program.ThreadRemoteNodeSync != null && (Program.ThreadRemoteNodeSync.IsAlive || Program.ThreadRemoteNodeSync != null))
+                                {
+                                    Program.ThreadRemoteNodeSync.Abort();
+                                    GC.SuppressFinalize(Program.ThreadRemoteNodeSync);
+                                }
+                                ClassConsole.ConsoleWriteLine("Waiting end of save RPC Wallet Database..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
+                                while (ClassRpcDatabase.InSave)
+                                {
+                                    Thread.Sleep(100);
+                                }
+                                ClassConsole.ConsoleWriteLine("Waiting end of save RPC Wallet Sync Database..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
+                                while (ClassSyncDatabase.InSave)
+                                {
+                                    Thread.Sleep(100);
+                                }
+                                ClassLog.StopLogSystem();
+                                ClassConsole.ConsoleWriteLine("RPC Wallet is successfully stopped, press ENTER to exit.", ClassConsoleColorEnumeration.IndexConsoleBlueLog, Program.LogLevel);
+                                Console.ReadLine();
+                                Process.GetCurrentProcess().Kill();
                                 break;
                         }
                         if (Program.Exit)

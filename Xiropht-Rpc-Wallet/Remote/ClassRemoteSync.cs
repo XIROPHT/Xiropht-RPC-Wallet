@@ -58,7 +58,7 @@ namespace Xiropht_Rpc_Wallet.Remote
         /// </summary>
         public static async Task ConnectRpcWalletToRemoteNodeSyncAsync()
         {
-            while(!ConnectionStatus)
+            while(!ConnectionStatus && !Program.Exit)
             {
                 try
                 {
@@ -135,7 +135,7 @@ namespace Xiropht_Rpc_Wallet.Remote
             }
             ThreadRemoteNodeListen = new Thread(async delegate ()
             {
-                while(ConnectionStatus)
+                while(ConnectionStatus && !Program.Exit)
                 {
                     try
                     {
@@ -313,7 +313,7 @@ namespace Xiropht_Rpc_Wallet.Remote
             }
             ThreadAutoSync = new Thread(async delegate ()
             {
-                while (ConnectionStatus)
+                while (ConnectionStatus && !Program.Exit)
                 {
                     try
                     {
