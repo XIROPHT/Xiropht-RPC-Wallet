@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Xiropht_Connector_All.Setting;
@@ -14,6 +13,7 @@ namespace Xiropht_Rpc_Wallet.Setting
         public const string SettingApiPortSetting = "API-PORT";
         public const string SettingApiWhitelist = "API-WHITELIST";
         public const string SettingApiKeyRequestEncryption = "API-KEY-REQUEST-ENCRYPTION";
+        public const string SettingApiEnableXForwardedForResolver = "API-ENABLE-X-FORWARDED-FOR-RESOLVER";
         public const string SettingEnableRemoteNodeSync = "ENABLE-REMOTE-NODE-SYNC";
         public const string SettingRemoteNodeHost = "REMOTE-NODE-HOST";
         public const string SettingRemoteNodePort = "REMOTE-NODE-PORT";
@@ -32,6 +32,8 @@ namespace Xiropht_Rpc_Wallet.Setting
         public static List<string> RpcWalletApiIpWhitelist = new List<string>(); // List of IP whitelisted on the API Server, if the list is empty everyone can try to access on the port.
 
         public static string RpcWalletApiKeyRequestEncryption = string.Empty; // The key for encrypt request to receive/sent.
+
+        public static bool RpcWalletApiEnableXForwardedForResolver = false;
 
         public static bool RpcWalletEnableRemoteNodeSync = false; // Enable remote node sync
 
@@ -181,6 +183,12 @@ namespace Xiropht_Rpc_Wallet.Setting
                                                         {
                                                             WalletMaxKeepAliveUpdate = walletMaxKeepAliveUpdate;
                                                         }
+                                                        break;
+                                                    case ClassRpcSettingEnumeration.SettingApiEnableXForwardedForResolver:
+                                                        if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
+                                                        {
+                                                            RpcWalletApiEnableXForwardedForResolver = true;
+                                                        }
                                                         containUpdate = true;
                                                         break;
                                                     default:
@@ -243,6 +251,10 @@ namespace Xiropht_Rpc_Wallet.Setting
                 ClassConsole.ConsoleWriteLine(choose+" is not a valid port number, please select a port for your API ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
             }
             RpcWalletApiPort = portTmp;
+            if (RpcWalletApiPort <= 0)
+            {
+                RpcWalletApiPort = 8000;
+            }
             ClassConsole.ConsoleWriteLine("Do you want to accept only IP whitelisted? [Y/N]", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
             bool yourChoose = Console.ReadLine().ToLower() == "y";
             if (yourChoose)
@@ -273,6 +285,14 @@ namespace Xiropht_Rpc_Wallet.Setting
                     RpcWalletApiKeyRequestEncryption = Console.ReadLine();
                 }
             }
+
+            ClassConsole.ConsoleWriteLine("Do you want to enable the X-FORWARDED-FOR resolver? (This option should be used once the API is behind a Proxy setting correctly.) [Y/N]", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+            yourChoose = Console.ReadLine().ToLower() == "y";
+            if (yourChoose)
+            {
+                RpcWalletApiEnableXForwardedForResolver = true;
+            }
+
             ClassConsole.ConsoleWriteLine("Do you want to use a remote node for sync transactions of your wallets? [Y/N]", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
             RpcWalletEnableRemoteNodeSync = Console.ReadLine().ToLower() == "y";
             if (RpcWalletEnableRemoteNodeSync)

@@ -208,18 +208,20 @@ namespace Xiropht_Rpc_Wallet.API
                                     if (received > 0)
                                     {
                                         string packet = Encoding.UTF8.GetString(buffer, 0, received);
-                                        try
+                                        if (ClassRpcSetting.RpcWalletApiEnableXForwardedForResolver)
                                         {
-                                            if (!GetAndCheckForwardedIp(packet))
+                                            try
                                             {
-                                                break;
+                                                if (!GetAndCheckForwardedIp(packet))
+                                                {
+                                                    break;
+                                                }
+                                            }
+                                            catch
+                                            {
+
                                             }
                                         }
-                                        catch
-                                        {
-
-                                        }
-
                                         packet = ClassUtility.GetStringBetween(packet, "GET /", "HTTP");
                                         packet = packet.Replace("%7C", "|"); // Translate special character | 
                                         packet = packet.Replace(" ", ""); // Remove empty,space characters
