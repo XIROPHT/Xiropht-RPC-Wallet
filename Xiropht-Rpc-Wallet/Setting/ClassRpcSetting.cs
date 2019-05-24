@@ -333,8 +333,15 @@ namespace Xiropht_Rpc_Wallet.Setting
                 settingWriter.WriteLine(host);
                 settingWriter.WriteLine("// The key for encrypt request to receive/sent on the API. ("+RpcApiKeyMinSize+" characters minimum required by the salt encryption system.)");
                 settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiKeyRequestEncryption + "=" + RpcWalletApiKeyRequestEncryption);
-                settingWriter.WriteLine("");
-
+                settingWriter.WriteLine("// The X-FORWARDED-FOR resolver, permit to resolve the IP from an incomming connection, this option should be used only if the API is behind a proxy.");
+                if (RpcWalletApiEnableXForwardedForResolver)
+                {
+                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiEnableXForwardedForResolver + "=Y");
+                }
+                else
+                {
+                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiEnableXForwardedForResolver + "=N");
+                }
                 settingWriter.WriteLine("// Enable remote node sync");
                 if (RpcWalletEnableRemoteNodeSync)
                 {
