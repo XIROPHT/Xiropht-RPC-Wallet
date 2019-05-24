@@ -249,6 +249,7 @@ namespace Xiropht_Rpc_Wallet.Setting
             while(!int.TryParse(choose, out var port))
             {
                 ClassConsole.ConsoleWriteLine(choose+" is not a valid port number, please select a port for your API ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                choose = Console.ReadLine();
             }
             RpcWalletApiPort = portTmp;
             if (RpcWalletApiPort <= 0)
