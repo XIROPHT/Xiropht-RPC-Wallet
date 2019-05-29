@@ -327,7 +327,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     }
                     else
                     {
-                        var decryptWalletDataCreate = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, splitPacket[1], WalletPassword, ClassWalletNetworkSetting.KeySize);
+                        var decryptWalletDataCreate = ClassAlgo.GetDecryptedResultManual(ClassAlgoEnumeration.Rijndael, splitPacket[1], WalletPassword, ClassWalletNetworkSetting.KeySize);
                         if (decryptWalletDataCreate == ClassAlgoErrorEnumeration.AlgoError)
                         {
                             WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorError;
@@ -359,7 +359,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     }
                     else
                     {
-                        var decryptWalletDataCreation = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, walletDataCreation, WalletPrivateKey, ClassWalletNetworkSetting.KeySize);
+                        var decryptWalletDataCreation = ClassAlgo.GetDecryptedResultManual(ClassAlgoEnumeration.Rijndael, walletDataCreation, WalletPrivateKey, ClassWalletNetworkSetting.KeySize);
                         if (decryptWalletDataCreation == ClassAlgoErrorEnumeration.AlgoError)
                         {
                             ClassConsole.ConsoleWriteLine("Restoring wallet failed, please try again later.", ClassConsoleColorEnumeration.IndexConsoleRedLog);

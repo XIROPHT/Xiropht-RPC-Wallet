@@ -28,11 +28,11 @@ namespace Xiropht_Rpc_Wallet.Remote
             string realTransactionInformationDecrypted = "NULL";
             if (type == "SEND")
             {
-                realTransactionInformationDecrypted = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, realTransactionInformationSenderSide, walletAddress + walletPublicKey, ClassWalletNetworkSetting.KeySize);
+                realTransactionInformationDecrypted = ClassAlgo.GetDecryptedResultManual(ClassAlgoEnumeration.Rijndael, realTransactionInformationSenderSide, walletAddress + walletPublicKey, ClassWalletNetworkSetting.KeySize);
             }
             else if (type == "RECV")
             {
-                realTransactionInformationDecrypted = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, realTransactionInformationReceiverSide, walletAddress + walletPublicKey, ClassWalletNetworkSetting.KeySize);
+                realTransactionInformationDecrypted = ClassAlgo.GetDecryptedResultManual(ClassAlgoEnumeration.Rijndael, realTransactionInformationReceiverSide, walletAddress + walletPublicKey, ClassWalletNetworkSetting.KeySize);
             }
             if (realTransactionInformationDecrypted != "NULL" && realTransactionInformationDecrypted != ClassAlgoErrorEnumeration.AlgoError)
             {

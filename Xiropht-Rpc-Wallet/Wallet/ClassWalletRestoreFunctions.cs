@@ -79,7 +79,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         {
 
                             string qrCodeString = BitmapToBase64String(representationQRCode);
-                            string QrCodeStringEncrypted = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, qrCodeString, privateKey, ClassWalletNetworkSetting.KeySize);
+                            string QrCodeStringEncrypted = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, qrCodeString, privateKey, ClassWalletNetworkSetting.KeySize);
                             string qrCodeEncryptedRequest = string.Empty;
 
                             if (privateKey.Contains("$"))
@@ -93,7 +93,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                                 string randomEndPrivateKey = privateKey.Remove(0, (privateKey.Length - ClassUtils.GetRandomBetween(privateKey.Length / 4, privateKey.Length / 8))); // Indicate only a small part of the end of the private key (For old private key users).
                                 qrCodeEncryptedRequest = randomEndPrivateKey + "|" + QrCodeStringEncrypted;
                             }
-                            string decryptQrCode = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, QrCodeStringEncrypted, privateKey, ClassWalletNetworkSetting.KeySize);
+                            string decryptQrCode = ClassAlgo.GetDecryptedResultManual(ClassAlgoEnumeration.Rijndael, QrCodeStringEncrypted, privateKey, ClassWalletNetworkSetting.KeySize);
 
                             using (Bitmap qrCode = Base64StringToBitmap(decryptQrCode))
                             {

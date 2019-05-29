@@ -55,7 +55,7 @@ namespace Xiropht_Rpc_Wallet.Database
                                         string walletAddress = splitTransactionLine[0];
                                         if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(walletAddress))
                                         {
-                                            string transaction = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, splitTransactionLine[1], walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
+                                            string transaction = ClassAlgo.GetDecryptedResultManual(ClassAlgoEnumeration.Rijndael, splitTransactionLine[1], walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
                                             var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
                                             if (splitTransaction[0] == "anonymous")
                                             {
@@ -98,7 +98,7 @@ namespace Xiropht_Rpc_Wallet.Database
                 {
                     try
                     {
-                        transaction = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, transaction, walletAddress + walletPublicKey, ClassWalletNetworkSetting.KeySize);
+                        transaction = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, transaction, walletAddress + walletPublicKey, ClassWalletNetworkSetting.KeySize);
                         string transactionLine = ClassSyncDatabaseEnumeration.DatabaseSyncStartLine + walletAddress + "|" + transaction;
                         SyncDatabaseStreamWriter.WriteLine(transactionLine);
                         success = true;

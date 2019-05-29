@@ -32,7 +32,7 @@ namespace Xiropht_Rpc_Wallet.Database
         /// <param name="password"></param>
         public static void SetRpcDatabasePassword(string password)
         {
-            RpcDatabasePassword = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, password, password, ClassWalletNetworkSetting.KeySize); // Encrypt the password with the password.
+            RpcDatabasePassword = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, password, password, ClassWalletNetworkSetting.KeySize); // Encrypt the password with the password.
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Xiropht_Rpc_Wallet.Database
                                     if (line.StartsWith(ClassRpcDatabaseEnumeration.DatabaseWalletStartLine))
                                     {
                                         string walletData = line.Replace(ClassRpcDatabaseEnumeration.DatabaseWalletStartLine, "");
-                                        walletData = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, walletData, RpcDatabasePassword, ClassWalletNetworkSetting.KeySize);
+                                        walletData = ClassAlgo.GetDecryptedResultManual(ClassAlgoEnumeration.Rijndael, walletData, RpcDatabasePassword, ClassWalletNetworkSetting.KeySize);
                                         if (walletData != ClassAlgoErrorEnumeration.AlgoError)
                                         {
                                             var splitWalletData = walletData.Split(new[] { "|" }, StringSplitOptions.None);
@@ -135,7 +135,7 @@ namespace Xiropht_Rpc_Wallet.Database
 
                     foreach (var wallet in RpcDatabaseContent)
                     {
-                        string encryptedWallet = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, wallet.Value.GetWalletAddress() + "|" + wallet.Value.GetWalletPublicKey() + "|" + wallet.Value.GetWalletPrivateKey() + "|" + wallet.Value.GetWalletPinCode() + "|" + wallet.Value.GetWalletPassword(), RpcDatabasePassword, ClassWalletNetworkSetting.KeySize);
+                        string encryptedWallet = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, wallet.Value.GetWalletAddress() + "|" + wallet.Value.GetWalletPublicKey() + "|" + wallet.Value.GetWalletPrivateKey() + "|" + wallet.Value.GetWalletPinCode() + "|" + wallet.Value.GetWalletPassword(), RpcDatabasePassword, ClassWalletNetworkSetting.KeySize);
                         RpcDatabaseStreamWriter.WriteLine(ClassRpcDatabaseEnumeration.DatabaseWalletStartLine + encryptedWallet);
                     }
                     success = true;
@@ -169,7 +169,7 @@ namespace Xiropht_Rpc_Wallet.Database
                     {
                         if (!RpcDatabaseContent.ContainsKey(walletAddress))
                         {
-                            string encryptedWallet = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, walletAddress + "|" + walletPublicKey + "|" + walletPrivateKey + "|" + walletPinCode + "|" + walletPassword, RpcDatabasePassword, ClassWalletNetworkSetting.KeySize);
+                            string encryptedWallet = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, walletAddress + "|" + walletPublicKey + "|" + walletPrivateKey + "|" + walletPinCode + "|" + walletPassword, RpcDatabasePassword, ClassWalletNetworkSetting.KeySize);
                             RpcDatabaseStreamWriter.WriteLine(ClassRpcDatabaseEnumeration.DatabaseWalletStartLine + encryptedWallet);
 
                             var walletObject = new ClassWalletObject(walletAddress, walletPublicKey, walletPassword, walletPrivateKey, walletPinCode, encryptedWallet);

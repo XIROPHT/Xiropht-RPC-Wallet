@@ -228,7 +228,7 @@ namespace Xiropht_Rpc_Wallet.API
                                         ClassConsole.ConsoleWriteLine("HTTP API - packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
                                         if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
                                         {
-                                            packet = ClassAlgo.GetDecryptedResult(ClassAlgoEnumeration.Rijndael, packet, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                            packet = ClassAlgo.GetDecryptedResultManual(ClassAlgoEnumeration.Rijndael, packet, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
                                             if (packet == ClassAlgoErrorEnumeration.AlgoError)
                                             {
                                                 ClassConsole.ConsoleWriteLine("HTTP API - wrong packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
@@ -802,7 +802,7 @@ namespace Xiropht_Rpc_Wallet.API
             }
             if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
             {
-                contentToSend = ClassAlgo.GetEncryptedResult(ClassAlgoEnumeration.Rijndael, contentToSend, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                contentToSend = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, contentToSend, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
             }
             StringBuilder builder = new StringBuilder();
 
