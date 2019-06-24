@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Text;
 using Xiropht_Connector_All.Setting;
 using Xiropht_Rpc_Wallet.ConsoleObject;
@@ -10,6 +11,7 @@ namespace Xiropht_Rpc_Wallet.Setting
 {
     public class ClassRpcSettingEnumeration
     {
+        public const string SettingApiIpBindSetting = "API-BIND-IP";
         public const string SettingApiPortSetting = "API-PORT";
         public const string SettingApiWhitelist = "API-WHITELIST";
         public const string SettingApiKeyRequestEncryption = "API-KEY-REQUEST-ENCRYPTION";
@@ -31,6 +33,8 @@ namespace Xiropht_Rpc_Wallet.Setting
 
         public static List<string> RpcWalletApiIpWhitelist = new List<string>(); // List of IP whitelisted on the API Server, if the list is empty everyone can try to access on the port.
 
+        public static string RpcWalletApiIpBind = "127.0.0.1";
+
         public static string RpcWalletApiKeyRequestEncryption = string.Empty; // The key for encrypt request to receive/sent.
 
         public static bool RpcWalletApiEnableXForwardedForResolver = false;
@@ -46,6 +50,7 @@ namespace Xiropht_Rpc_Wallet.Setting
         public static int WalletMaxKeepAliveUpdate = 5; // Max Keep Alive time in second(s) task of update wallet informations.
 
         public static bool WalletEnableAutoUpdateWallet = false; // Enable auto update of wallets informations.
+
 
         /// <summary>
         /// Initialize setting of RPC Wallet
@@ -83,13 +88,41 @@ namespace Xiropht_Rpc_Wallet.Setting
 #endif
                                                 switch (splitLine[0])
                                                 {
-                                                    case ClassRpcSettingEnumeration.SettingApiPortSetting:
-                                                        if (splitLine.Length > 1)
+                                                    case ClassRpcSettingEnumeration.SettingApiIpBindSetting:
+                                                        if (IPAddress.TryParse(splitLine[1], out var ipAddress))
                                                         {
-                                                            RpcWalletApiPort = int.Parse(splitLine[1]);
+                                                            RpcWalletApiIpBind = splitLine[1];
                                                         }
                                                         else
                                                         {
+                                                            Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines + " | Exception: " + splitLine[1] + " is not an IP.");
+                                                        }
+                                                        containUpdate = true;
+                                                        break;
+                                                    case ClassRpcSettingEnumeration.SettingApiPortSetting:
+                                                        if (splitLine.Length > 1)
+                                                        {
+                                                            if (int.TryParse(splitLine[1], out var rpcApiPort))
+                                                            {
+                                                                if (rpcApiPort <= 0 || rpcApiPort >= 65535)
+                                                                {
+                                                                    Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines + " | Exception: " + splitLine[1] + " is not a valid port number.");
+                                                                    Console.WriteLine("Use default port 8000");
+                                                                }
+                                                                else
+                                                                {
+                                                                    RpcWalletApiPort = rpcApiPort;
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines + " | Exception: " + splitLine[1] + " is not a valid port number.");
+                                                                Console.WriteLine("Use default port 8000");
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            Console.WriteLine("Use default port 8000");
                                                             RpcWalletApiPort = 8000;
                                                         }
                                                         break;
@@ -99,7 +132,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                                                             if (splitLine[1].Contains(";"))
                                                             {
                                                                 var splitLineIp = splitLine[1].Split(new[] { ";" }, StringSplitOptions.None);
-                                                                foreach(var lineIp in splitLineIp)
+                                                                foreach (var lineIp in splitLineIp)
                                                                 {
                                                                     if (lineIp != null)
                                                                     {
@@ -189,7 +222,6 @@ namespace Xiropht_Rpc_Wallet.Setting
                                                         {
                                                             RpcWalletApiEnableXForwardedForResolver = true;
                                                         }
-                                                        containUpdate = true;
                                                         break;
                                                     default:
                                                         if (splitLine.Length > 1)
@@ -243,12 +275,21 @@ namespace Xiropht_Rpc_Wallet.Setting
         private static void MakeRpcWalletSetting()
         {
             ClassConsole.ConsoleWriteLine("Setting up Web API:", ClassConsoleColorEnumeration.IndexConsoleYellowLog);
+
+            ClassConsole.ConsoleWriteLine("Please write the IP Address to bind (by default 127.0.0.1): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+            RpcWalletApiIpBind = Console.ReadLine();
+            while (!IPAddress.TryParse(RpcWalletApiIpBind, out var ipAddress))
+            {
+                ClassConsole.ConsoleWriteLine(RpcWalletApiIpBind + " is not a valid IP Address. Please write the IP Address to bind (by default 127.0.0.1): ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                RpcWalletApiIpBind = Console.ReadLine();
+            }
+
             ClassConsole.ConsoleWriteLine("Please select a port for your API to listen (By default 8000): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
             string choose = Console.ReadLine();
             int portTmp = 0;
-            while(!int.TryParse(choose, out var port))
+            while (!int.TryParse(choose, out var port))
             {
-                ClassConsole.ConsoleWriteLine(choose+" is not a valid port number, please select a port for your API ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                ClassConsole.ConsoleWriteLine(choose + " is not a valid port number, please select a port for your API ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
                 choose = Console.ReadLine();
             }
             RpcWalletApiPort = portTmp;
@@ -261,14 +302,14 @@ namespace Xiropht_Rpc_Wallet.Setting
             if (yourChoose)
             {
                 bool finish = false;
-                while(!finish)
+                while (!finish)
                 {
                     ClassConsole.ConsoleWriteLine("Write an IP to whitelist: ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
                     string ip = Console.ReadLine();
                     RpcWalletApiIpWhitelist.Add(ip);
                     ClassConsole.ConsoleWriteLine("Do you want to write another IP? [Y/N]", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
                     yourChoose = Console.ReadLine().ToLower() == "y";
-                    if(!yourChoose)
+                    if (!yourChoose)
                     {
                         finish = true;
                     }
@@ -280,7 +321,7 @@ namespace Xiropht_Rpc_Wallet.Setting
             {
                 ClassConsole.ConsoleWriteLine("Write your API Key (" + RpcApiKeyMinSize + " characters minimum required by the salt encryption system.): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
                 RpcWalletApiKeyRequestEncryption = Console.ReadLine();
-                while(RpcWalletApiKeyRequestEncryption.Length < RpcApiKeyMinSize)
+                while (RpcWalletApiKeyRequestEncryption.Length < RpcApiKeyMinSize)
                 {
                     ClassConsole.ConsoleWriteLine("Your API Key characters length is less than " + RpcApiKeyMinSize + " characters (Minimum required by the salt encryption system.), please write another one: ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
                     RpcWalletApiKeyRequestEncryption = Console.ReadLine();
@@ -300,9 +341,9 @@ namespace Xiropht_Rpc_Wallet.Setting
             {
                 ClassConsole.ConsoleWriteLine("Write the remote node IP/Hostname address: ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
                 RpcWalletRemoteNodeHost = Console.ReadLine();
-                ClassConsole.ConsoleWriteLine("Write the remote node port (by default "+ClassConnectorSetting.RemoteNodePort+"): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+                ClassConsole.ConsoleWriteLine("Write the remote node port (by default " + ClassConnectorSetting.RemoteNodePort + "): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
                 int port = ClassConnectorSetting.RemoteNodePort;
-                while(!int.TryParse(Console.ReadLine(), out port))
+                while (!int.TryParse(Console.ReadLine(), out port))
                 {
                     ClassConsole.ConsoleWriteLine("Write a valid the remote node port (by default " + ClassConnectorSetting.RemoteNodePort + "): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
                 }
@@ -310,17 +351,20 @@ namespace Xiropht_Rpc_Wallet.Setting
             }
             using (var settingWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile), true, Encoding.UTF8, 8192) { AutoFlush = true })
             {
+                settingWriter.WriteLine("// RPC Wallet IP Bind.");
+                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiIpBindSetting + "=" + RpcWalletApiIpBind);
+
                 settingWriter.WriteLine("// RPC Wallet API port.");
                 settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiPortSetting + "=" + RpcWalletApiPort);
                 settingWriter.WriteLine("// List of IP whitelisted on the API Server, if the list is empty everyone can try to access on the port. use ; between each ip/hostname address");
                 string host = ClassRpcSettingEnumeration.SettingApiWhitelist + "=";
                 if (RpcWalletApiIpWhitelist.Count > 0)
                 {
-                    for(int i = 0; i < RpcWalletApiIpWhitelist.Count; i++)
+                    for (int i = 0; i < RpcWalletApiIpWhitelist.Count; i++)
                     {
                         if (i < RpcWalletApiIpWhitelist.Count)
                         {
-                            if (i < RpcWalletApiIpWhitelist.Count-1)
+                            if (i < RpcWalletApiIpWhitelist.Count - 1)
                             {
                                 host += RpcWalletApiIpWhitelist[i] + ";";
                             }
@@ -332,7 +376,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                     }
                 }
                 settingWriter.WriteLine(host);
-                settingWriter.WriteLine("// The key for encrypt request to receive/sent on the API. ("+RpcApiKeyMinSize+" characters minimum required by the salt encryption system.)");
+                settingWriter.WriteLine("// The key for encrypt request to receive/sent on the API. (" + RpcApiKeyMinSize + " characters minimum required by the salt encryption system.)");
                 settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiKeyRequestEncryption + "=" + RpcWalletApiKeyRequestEncryption);
                 settingWriter.WriteLine("// The X-FORWARDED-FOR resolver, permit to resolve the IP from an incomming connection, this option should be used only if the API is behind a proxy.");
                 if (RpcWalletApiEnableXForwardedForResolver)

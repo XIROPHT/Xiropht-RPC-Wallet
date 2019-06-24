@@ -58,14 +58,9 @@ namespace Xiropht_Rpc_Wallet.API
         public static void StartApiHttpServer()
         {
             ListenApiHttpConnectionStatus = true;
-            if (ClassRpcSetting.RpcWalletApiPort <= 0) // Not selected or invalid
-            {
-                ListenerApiHttpConnection = new TcpListener(IPAddress.Any, 8000);
-            }
-            else
-            {
-                ListenerApiHttpConnection = new TcpListener(IPAddress.Any, ClassRpcSetting.RpcWalletApiPort);
-            }
+
+            ListenerApiHttpConnection = new TcpListener(IPAddress.Parse(ClassRpcSetting.RpcWalletApiIpBind), ClassRpcSetting.RpcWalletApiPort);
+
             ListenerApiHttpConnection.Start();
             ThreadListenApiHttpConnection = new Thread(async delegate ()
             {
