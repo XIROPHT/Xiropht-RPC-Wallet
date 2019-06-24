@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xiropht_Connector_All.Setting;
 using Xiropht_Rpc_Wallet.ConsoleObject;
 using Xiropht_Rpc_Wallet.Database;
@@ -19,8 +20,8 @@ namespace Xiropht_Rpc_Wallet.Wallet
         private string WalletAnonymousUniqueId;
         private bool WalletOnSendingTransaction;
         private long WalletLastUpdate;
-        private List<string> WalletListOfTransaction;
-        private List<string> WalletListOfAnonymousTransaction;
+        private Dictionary<string, string> WalletListOfTransaction;
+        private Dictionary<string, string> WalletListOfAnonymousTransaction;
         private string WalletContentReadLine;
         private bool WalletInUpdate;
 
@@ -46,8 +47,8 @@ namespace Xiropht_Rpc_Wallet.Wallet
             WalletUniqueId = "-1";
             WalletAnonymousUniqueId = "-1";
             WalletOnSendingTransaction = false;
-            WalletListOfTransaction = new List<string>();
-            WalletListOfAnonymousTransaction = new List<string>();
+            WalletListOfTransaction = new Dictionary<string, string>();
+            WalletListOfAnonymousTransaction = new Dictionary<string, string>();
             WalletContentReadLine = walletContentReadLine;
             WalletInUpdate = false;
         }
@@ -172,9 +173,10 @@ namespace Xiropht_Rpc_Wallet.Wallet
         {
             if (!anonymous)
             {
-                if (!WalletListOfTransaction.Contains(transaction))
+                var transactionHash = transaction.Split(new[] { "#" }, StringSplitOptions.None)[4];
+                if (!WalletListOfTransaction.ContainsKey(transactionHash))
                 {
-                    WalletListOfTransaction.Add(transaction);
+                    WalletListOfTransaction.Add(transactionHash, transaction);
                     if (save)
                     {
                         ClassSyncDatabase.InsertTransactionToSyncDatabaseAsync(WalletAddress, WalletPublicKey, transaction);
@@ -184,9 +186,10 @@ namespace Xiropht_Rpc_Wallet.Wallet
             }
             else
             {
-                if (!WalletListOfAnonymousTransaction.Contains(transaction))
+                var transactionHash = transaction.Split(new[] { "#" }, StringSplitOptions.None)[4];
+                if (!WalletListOfAnonymousTransaction.ContainsKey(transactionHash))
                 {
-                    WalletListOfAnonymousTransaction.Add(transaction);
+                    WalletListOfAnonymousTransaction.Add(transactionHash, transaction);
                     if (save)
                     {
                         ClassSyncDatabase.InsertTransactionToSyncDatabaseAsync(WalletAddress, WalletPublicKey, transaction);
@@ -334,10 +337,11 @@ namespace Xiropht_Rpc_Wallet.Wallet
             }
             if (WalletListOfTransaction.Count > index)
             {
-                return WalletListOfTransaction[index];
+                return WalletListOfTransaction.ElementAt(index).Value;
             }
             return null;
         }
+
 
         /// <summary>
         /// Return an anonymous transaction sync selected by index.
@@ -352,7 +356,42 @@ namespace Xiropht_Rpc_Wallet.Wallet
             }
             if (WalletListOfAnonymousTransaction.Count > index)
             {
-                return WalletListOfAnonymousTransaction[index];
+                return WalletListOfAnonymousTransaction.ElementAt(index).Value;
+            }
+            return null;
+        }
+
+
+        /// <summary>
+        /// Return any kind of transaction synced anonymous or normal selected by his transaction hash.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public Tuple<int, string> GetWalletAnyTransactionSyncByHash(string transactionHash)
+        {
+            if (WalletListOfTransaction.ContainsKey(transactionHash))
+            {
+                int counter = 0;
+                foreach(var transaction in WalletListOfTransaction.ToArray())
+                {
+                    if (transaction.Key == transactionHash)
+                    {
+                        return new Tuple<int, string>(counter, transaction.Value);
+                    }
+                    counter++;
+                }
+            }
+            else if (WalletListOfAnonymousTransaction.ContainsKey(transactionHash))
+            {
+                int counter = 0;
+                foreach (var transaction in WalletListOfAnonymousTransaction.ToArray())
+                {
+                    if (transaction.Key == transactionHash)
+                    {
+                        return new Tuple<int, string>(counter, transaction.Value);
+                    }
+                    counter++;
+                }
             }
             return null;
         }

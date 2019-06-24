@@ -15,7 +15,6 @@ using Xiropht_Connector_All.Wallet;
 using Xiropht_Rpc_Wallet.ConsoleObject;
 using Xiropht_Rpc_Wallet.Database;
 using Xiropht_Rpc_Wallet.Setting;
-using Xiropht_Rpc_Wallet.Threading;
 
 namespace Xiropht_Rpc_Wallet.Wallet
 {
@@ -44,9 +43,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                 {
                     if (ClassRpcDatabase.RpcDatabaseContent.Count > 0)
                     {
-
-
-                        foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent)
+                        foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent.ToArray()) // Copy temporaly the database of wallets in the case of changes on the enumeration done by a parallal process, update all of them.
                         {
                             try
                             {
@@ -78,8 +75,8 @@ namespace Xiropht_Rpc_Wallet.Wallet
                                 {
                                     if (!walletObject.Value.GetWalletUpdateStatus() && walletObject.Value.GetLastWalletUpdate() <= DateTimeOffset.Now.ToUnixTimeSeconds())
                                     {
-                                        walletObject.Value.SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds() + ClassRpcSetting.WalletUpdateInterval);
-                                        walletObject.Value.SetWalletOnUpdateStatus(true);
+                                        ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds() + ClassRpcSetting.WalletUpdateInterval);
+                                        ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].SetWalletOnUpdateStatus(true);
                                         UpdateWalletTarget(getSeedNodeRandom, walletObject.Key);
                                     }
                                 }
@@ -153,7 +150,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     Console.WriteLine("Error on update wallet: " + walletAddress + " exception: " + error.Message);
 #endif
                 }
-            }, CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, PriorityScheduler.Lowest).ConfigureAwait(false);
+            }, CancellationToken.None, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current).ConfigureAwait(false);
         }
 
         /// <summary>

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -11,7 +10,6 @@ using Xiropht_Connector_All.Setting;
 using Xiropht_Rpc_Wallet.ConsoleObject;
 using Xiropht_Rpc_Wallet.Database;
 using Xiropht_Rpc_Wallet.Setting;
-using Xiropht_Rpc_Wallet.Threading;
 
 namespace Xiropht_Rpc_Wallet.Remote
 {
@@ -162,7 +160,7 @@ namespace Xiropht_Rpc_Wallet.Remote
                                                     {
                                                         if (packetEach.Length > 1)
                                                         {
-                                                            await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetEach), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Current).ConfigureAwait(false);
+                                                            HandlePacketReceivedFromSync(packetEach);
                                                         }
                                                     }
                                                 }
@@ -170,12 +168,12 @@ namespace Xiropht_Rpc_Wallet.Remote
                                         }
                                         else
                                         {
-                                            await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetReceived.Replace("*", "")), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Current).ConfigureAwait(false);
+                                            HandlePacketReceivedFromSync(packetReceived.Replace("*", ""));
                                         }
                                     }
                                     else
                                     {
-                                        await Task.Factory.StartNew(() => HandlePacketReceivedFromSync(packetReceived), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Current).ConfigureAwait(false);
+                                        HandlePacketReceivedFromSync(packetReceived);
                                     }
                                 }
                             }
@@ -317,7 +315,7 @@ namespace Xiropht_Rpc_Wallet.Remote
                 {
                     try
                     {
-                        foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent)
+                        foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent.ToArray()) // Copy temporaly the database of wallets in the case of changes on the enumeration done by a parallal process, update sync of all of them.
                         {
 
 

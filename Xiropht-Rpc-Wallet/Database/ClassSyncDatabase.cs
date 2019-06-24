@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Xiropht_Connector_All.Utils;
 using Xiropht_Connector_All.Wallet;
 using Xiropht_Rpc_Wallet.ConsoleObject;
-using Xiropht_Rpc_Wallet.Threading;
 using Xiropht_Rpc_Wallet.Utility;
 
 namespace Xiropht_Rpc_Wallet.Database
