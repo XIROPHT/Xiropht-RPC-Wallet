@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Xiropht_Connector_All.Utils;
 using Xiropht_Connector_All.Wallet;
 using Xiropht_Rpc_Wallet.ConsoleObject;
+using Xiropht_Rpc_Wallet.Setting;
 using Xiropht_Rpc_Wallet.Utility;
 using Xiropht_Rpc_Wallet.Wallet;
 
@@ -23,9 +24,12 @@ namespace Xiropht_Rpc_Wallet.Database
         private static string RpcDatabasePassword; // This password permit to decrypt each lines of the database.
         private const string RpcDatabaseFile = "\\rpcdata.xirdb"; // Content every wallet informations.
         private const string RpcDatabaseFileBackup = "\\rpcdata-bak.xirdb"; // Backup content of every wallet informations.
+        private const string RpcDatabaseBackupDirectory = "\\Backup\\";
         public static Dictionary<string, ClassWalletObject> RpcDatabaseContent; // Content every wallets (wallet address and public key only)
         private static StreamWriter RpcDatabaseStreamWriter; // Permit to keep alive a stream writer for write a new wallet information created.
         public static bool InSave;
+        public static bool InSaveBackup;
+        private static Thread ThreadRpcBackupWalletDatabase;
 
         /// <summary>
         /// Set rpc database password.
@@ -114,6 +118,7 @@ namespace Xiropht_Rpc_Wallet.Database
             }
             InSave = true;
             bool success = false;
+            ClassConsole.ConsoleWriteLine("RPC Wallet on saving wallet database, please wait a moment..", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
             while (!success)
             {
                 try
@@ -146,6 +151,8 @@ namespace Xiropht_Rpc_Wallet.Database
                     RpcDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
                 }
             }
+            ClassConsole.ConsoleWriteLine("RPC Wallet on saving wallet database saved successfully.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
+
             InSave = false;
             return true;
         }
@@ -164,15 +171,15 @@ namespace Xiropht_Rpc_Wallet.Database
             {
                 InSave = true;
                 bool success = false;
+                ClassConsole.ConsoleWriteLine("RPC Wallet on saving wallet database, please wait a moment..", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
+                string encryptedWallet = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, walletAddress + "|" + walletPublicKey + "|" + walletPrivateKey + "|" + walletPinCode + "|" + walletPassword, RpcDatabasePassword, ClassWalletNetworkSetting.KeySize);
+
                 while (!success)
                 {
                     try
                     {
                         if (!RpcDatabaseContent.ContainsKey(walletAddress))
                         {
-                            string encryptedWallet = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, walletAddress + "|" + walletPublicKey + "|" + walletPrivateKey + "|" + walletPinCode + "|" + walletPassword, RpcDatabasePassword, ClassWalletNetworkSetting.KeySize);
-                            RpcDatabaseStreamWriter.WriteLine(ClassRpcDatabaseEnumeration.DatabaseWalletStartLine + encryptedWallet);
-
                             var walletObject = new ClassWalletObject(walletAddress, walletPublicKey, walletPassword, walletPrivateKey, walletPinCode, encryptedWallet);
                             RpcDatabaseContent.Add(walletAddress, walletObject);
                         }
@@ -180,11 +187,96 @@ namespace Xiropht_Rpc_Wallet.Database
                     }
                     catch
                     {
+                        success = false;
+                    }
+                }
+                success = false;
+                while (!success)
+                {
+                    try
+                    {
+                        RpcDatabaseStreamWriter.WriteLine(ClassRpcDatabaseEnumeration.DatabaseWalletStartLine + encryptedWallet);
+                        success = true;
+                    }
+                    catch
+                    {
                         RpcDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
+                        success = false;
                     }
                 }
                 InSave = false;
+                ClassConsole.ConsoleWriteLine("RPC Wallet on saving wallet database saved successfully.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
             }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Current);
+        }
+
+        /// <summary>
+        /// Enable Backup Wallet Database System.
+        /// </summary>
+        public static void EnableBackupWalletDatabaseSystem()
+        {
+            ThreadRpcBackupWalletDatabase = new Thread(delegate ()
+            {
+                ClassConsole.ConsoleWriteLine("RPC Wallet Backup system enabled.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, Program.LogLevel);
+
+                if (!Directory.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseBackupDirectory)))
+                {
+                    Directory.CreateDirectory(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseBackupDirectory));
+                }
+
+                while (!Program.Exit)
+                {
+                    try
+                    {
+                        string backupFileName = RpcDatabaseFile + "-" + DateTimeOffset.Now.ToUnixTimeSeconds().ToString("F0");
+                        string backupFilePath = ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseBackupDirectory + backupFileName);
+                        if (!File.Exists(backupFilePath))
+                        {
+                            InSaveBackup = true;
+                            File.Create(backupFilePath).Close();
+                            using (StreamWriter writer = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseBackupDirectory + backupFileName)))
+                            {
+                                foreach (var wallet in RpcDatabaseContent.ToArray())
+                                {
+                                    string encryptedWallet = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, wallet.Value.GetWalletAddress() + "|" + wallet.Value.GetWalletPublicKey() + "|" + wallet.Value.GetWalletPrivateKey() + "|" + wallet.Value.GetWalletPinCode() + "|" + wallet.Value.GetWalletPassword(), RpcDatabasePassword, ClassWalletNetworkSetting.KeySize);
+                                    writer.WriteLine(ClassRpcDatabaseEnumeration.DatabaseWalletStartLine + encryptedWallet);
+                                }
+                            }
+                            ClassConsole.ConsoleWriteLine("RPC Wallet save successfully backup of wallet database in: " + backupFilePath, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
+                        }
+                    }
+                    catch (Exception error)
+                    {
+                        ClassConsole.ConsoleWriteLine("RPC Wallet save error backup of wallet database | Exception: " + error.Message, ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
+                    }
+                    InSaveBackup = false;
+                    Thread.Sleep(ClassRpcSetting.WalletIntervalBackupSystem*1000);
+                }
+            });
+            ThreadRpcBackupWalletDatabase.Start();
+        }
+
+        /// <summary>
+        /// Stop backup wallet database system.
+        /// </summary>
+        public static void StopBackupWalletDatabaseSystem()
+        {
+            bool error = true;
+            while (error)
+            {
+                try
+                {
+                    if (ThreadRpcBackupWalletDatabase != null && (ThreadRpcBackupWalletDatabase.IsAlive || ThreadRpcBackupWalletDatabase != null))
+                    {
+                        ThreadRpcBackupWalletDatabase.Abort();
+                        GC.SuppressFinalize(ThreadRpcBackupWalletDatabase);
+                    }
+                    error = false;
+                }
+                catch
+                {
+                    error = true;
+                }
+            }
         }
     }
 }

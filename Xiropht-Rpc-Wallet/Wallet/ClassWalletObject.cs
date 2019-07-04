@@ -173,7 +173,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         {
             if (!anonymous)
             {
-                var transactionHash = transaction.Split(new[] { "#" }, StringSplitOptions.None)[4];
+                var transactionHash = transaction.Split(new[] { "#" }, StringSplitOptions.None)[2];
                 if (!WalletListOfTransaction.ContainsKey(transactionHash))
                 {
                     WalletListOfTransaction.Add(transactionHash, transaction);
@@ -186,7 +186,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
             }
             else
             {
-                var transactionHash = transaction.Split(new[] { "#" }, StringSplitOptions.None)[4];
+                var transactionHash = transaction.Split(new[] { "#" }, StringSplitOptions.None)[2];
                 if (!WalletListOfAnonymousTransaction.ContainsKey(transactionHash))
                 {
                     WalletListOfAnonymousTransaction.Add(transactionHash, transaction);
@@ -331,16 +331,13 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletTransactionSyncByIndex(int index)
         {
-            if (index > 0)
-            {
-                index--;
-            }
             if (WalletListOfTransaction.Count > index)
             {
                 return WalletListOfTransaction.ElementAt(index).Value;
             }
             return null;
         }
+
 
 
         /// <summary>
@@ -350,10 +347,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletAnonymousTransactionSyncByIndex(int index)
         {
-            if (index > 0)
-            {
-                index--;
-            }
+
             if (WalletListOfAnonymousTransaction.Count > index)
             {
                 return WalletListOfAnonymousTransaction.ElementAt(index).Value;

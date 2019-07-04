@@ -22,6 +22,9 @@ namespace Xiropht_Rpc_Wallet.Setting
         public const string SettingWalletUpdateInterval = "WALLET-UPDATE-INTERVAL";
         public const string SettingWalletMaxKeepAliveUpdate = "WALLET-MAX-KEEP-ALIVE-UPDATE";
         public const string SettingWalletEnableAutoUpdate = "WALLET-ENABLE-AUTO-UPDATE";
+        public const string SettingEnableBackupWalletSystem = "WALLET-ENABLE-BACKUP-SYSTEM";
+        public const string SettingIntervalBackupWalletSystem = "WALLET-INTERVAL-BACKUP-SYSTEM";
+
     }
 
     public class ClassRpcSetting
@@ -50,6 +53,10 @@ namespace Xiropht_Rpc_Wallet.Setting
         public static int WalletMaxKeepAliveUpdate = 5; // Max Keep Alive time in second(s) task of update wallet informations.
 
         public static bool WalletEnableAutoUpdateWallet = false; // Enable auto update of wallets informations.
+
+        public static bool WalletEnableBackupSystem = true; // Enable auto backup system of current wallet database content.
+
+        public static int WalletIntervalBackupSystem = 60; // Interval of backup current wallet database content.
 
 
         /// <summary>
@@ -88,6 +95,27 @@ namespace Xiropht_Rpc_Wallet.Setting
 #endif
                                                 switch (splitLine[0])
                                                 {
+                                                    case ClassRpcSettingEnumeration.SettingEnableBackupWalletSystem:
+                                                        if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
+                                                        {
+                                                            WalletEnableBackupSystem = true;
+                                                        }
+                                                        else
+                                                        {
+                                                            WalletEnableBackupSystem = false;
+                                                        }
+                                                        containUpdate = true;
+                                                        break;
+                                                    case ClassRpcSettingEnumeration.SettingIntervalBackupWalletSystem:
+                                                        if (int.TryParse(splitLine[1], out var intervalBackupSystem))
+                                                        {
+                                                            WalletIntervalBackupSystem = intervalBackupSystem;
+                                                        }
+                                                        else
+                                                        {
+                                                            Console.WriteLine("Error on line: "+ ClassRpcSettingEnumeration.SettingIntervalBackupWalletSystem+ ", use default interval: "+WalletIntervalBackupSystem);
+                                                        }
+                                                        break;
                                                     case ClassRpcSettingEnumeration.SettingApiIpBindSetting:
                                                         if (IPAddress.TryParse(splitLine[1], out var ipAddress))
                                                         {
@@ -97,7 +125,6 @@ namespace Xiropht_Rpc_Wallet.Setting
                                                         {
                                                             Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines + " | Exception: " + splitLine[1] + " is not an IP.");
                                                         }
-                                                        containUpdate = true;
                                                         break;
                                                     case ClassRpcSettingEnumeration.SettingApiPortSetting:
                                                         if (splitLine.Length > 1)
@@ -122,8 +149,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                                                         }
                                                         else
                                                         {
-                                                            Console.WriteLine("Use default port 8000");
-                                                            RpcWalletApiPort = 8000;
+                                                            Console.WriteLine("Error on line: " + ClassRpcSettingEnumeration.SettingApiPortSetting + ", use default port: " + RpcWalletApiPort);
                                                         }
                                                         break;
                                                     case ClassRpcSettingEnumeration.SettingApiWhitelist:
@@ -349,6 +375,19 @@ namespace Xiropht_Rpc_Wallet.Setting
                 }
                 RpcWalletRemoteNodePort = port;
             }
+
+            ClassConsole.ConsoleWriteLine("Do you to enable backup system of wallet database ? [Y/N]", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+            WalletEnableBackupSystem = Console.ReadLine().ToLower() == "y";
+            if (WalletEnableBackupSystem)
+            {
+                ClassConsole.ConsoleWriteLine("Write the interval of backup (by default " + WalletIntervalBackupSystem + " seconds): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+                int interval = WalletIntervalBackupSystem;
+                while (!int.TryParse(Console.ReadLine(), out interval))
+                {
+                    ClassConsole.ConsoleWriteLine("Write a valid interval of backup (by default " + WalletIntervalBackupSystem + " seconds): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+                }
+                WalletIntervalBackupSystem = interval;
+            }
             using (var settingWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile), true, Encoding.UTF8, 8192) { AutoFlush = true })
             {
                 settingWriter.WriteLine("// RPC Wallet IP Bind.");
@@ -437,6 +476,17 @@ namespace Xiropht_Rpc_Wallet.Setting
                     settingWriter.WriteLine("// Interval of time in second(s) between whole updates of wallets informations.");
                     settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletUpdateInterval + "=" + WalletUpdateInterval);
                 }
+
+                settingWriter.WriteLine("// About backup system of wallet database.");
+                if (WalletEnableBackupSystem)
+                {
+                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingEnableBackupWalletSystem + "=Y");
+                }
+                else
+                {
+                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingEnableBackupWalletSystem + "=N");
+                }
+                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletUpdateInterval + "=" + WalletIntervalBackupSystem);
             }
         }
     }

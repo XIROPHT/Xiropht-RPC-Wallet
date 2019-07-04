@@ -319,7 +319,7 @@ namespace Xiropht_Rpc_Wallet.Remote
                         {
 
 
-                            if (walletObject.Value.GetWalletUniqueId() != "-1" && walletObject.Value.GetWalletAnonymousUniqueId() != "-1")
+                            if (ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletUniqueId() != "-1" && ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletAnonymousUniqueId() != "-1")
                             {
                                 #region Attempt to sync the current wallet on the database.
 
@@ -341,9 +341,9 @@ namespace Xiropht_Rpc_Wallet.Remote
                                     
                                     if (CurrentWalletTransactionToSync > 0)
                                     {
-                                        if (CurrentWalletTransactionToSync > walletObject.Value.GetWalletTotalTransactionSync()) // Start to sync transaction.
+                                        if (CurrentWalletTransactionToSync > ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalTransactionSync()) // Start to sync transaction.
                                         {
-                                            for (int i = walletObject.Value.GetWalletTotalTransactionSync(); i < CurrentWalletTransactionToSync; i++)
+                                            for (int i = ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalTransactionSync(); i < CurrentWalletTransactionToSync; i++)
                                             {
                                                 CurrentWalletOnSyncTransaction = true;
                                                 if (!await SendPacketToRemoteNode(ClassRemoteNodeCommandForWallet.RemoteNodeSendPacketEnumeration.WalletAskTransactionPerId + "|" + walletObject.Value.GetWalletUniqueId() + "|" + i))
@@ -377,9 +377,9 @@ namespace Xiropht_Rpc_Wallet.Remote
                                        
                                         if (CurrentWalletAnonymousTransactionToSync > 0)
                                         {
-                                            if (CurrentWalletAnonymousTransactionToSync > walletObject.Value.GetWalletTotalAnonymousTransactionSync()) // Start to sync transaction.
+                                            if (CurrentWalletAnonymousTransactionToSync > ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalAnonymousTransactionSync()) // Start to sync transaction.
                                             {
-                                                for (int i = walletObject.Value.GetWalletTotalAnonymousTransactionSync(); i < CurrentWalletAnonymousTransactionToSync; i++)
+                                                for (int i = ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalAnonymousTransactionSync(); i < CurrentWalletAnonymousTransactionToSync; i++)
                                                 {
                                                     CurrentWalletOnSyncTransaction = true;
                                                     if (!await SendPacketToRemoteNode(ClassRemoteNodeCommandForWallet.RemoteNodeSendPacketEnumeration.WalletAskAnonymityTransactionPerId + "|" + walletObject.Value.GetWalletAnonymousUniqueId() + "|" + i))

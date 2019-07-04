@@ -62,6 +62,10 @@ namespace Xiropht_Rpc_Wallet
                             ThreadRemoteNodeSync = new Thread(async () => await ClassRemoteSync.ConnectRpcWalletToRemoteNodeSyncAsync());
                             ThreadRemoteNodeSync.Start();
                         }
+                        if (ClassRpcSetting.WalletEnableBackupSystem)
+                        {
+                            ClassRpcDatabase.EnableBackupWalletDatabaseSystem();
+                        }
                         ClassConsole.ConsoleWriteLine("Enable Command Line system.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
                         ClassConsoleCommandLine.EnableConsoleCommandLine();
                     }

@@ -43,47 +43,53 @@ namespace Xiropht_Rpc_Wallet.Wallet
                 {
                     if (ClassRpcDatabase.RpcDatabaseContent.Count > 0)
                     {
-                        foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent.ToArray()) // Copy temporaly the database of wallets in the case of changes on the enumeration done by a parallal process, update all of them.
+                        string getSeedNodeRandom = string.Empty;
+                        bool seedNodeSelected = false;
+                        if (ClassConnectorSetting.SeedNodeIp.Count > 0)
                         {
-                            try
+                            foreach (var seedNode in ClassConnectorSetting.SeedNodeIp.ToArray())
                             {
-                                if (Program.Exit)
+                                getSeedNodeRandom = seedNode.Key;
+                                Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(seedNode.Key, ClassConnectorSetting.SeedNodeTokenPort));
+                                taskCheckSeedNode.Wait(ClassConnectorSetting.MaxTimeoutConnect);
+                                if (seedNodeSelected)
                                 {
                                     break;
                                 }
-                                string getSeedNodeRandom = string.Empty;
-                                bool seedNodeSelected = false;
-                                if (ClassConnectorSetting.SeedNodeIp.Count > 0)
+                            }
+                        }
+                        else
+                        {
+                            getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(0).Key;
+                            seedNodeSelected = true;
+                        }
+                        if (seedNodeSelected)
+                        {
+                            foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent.ToArray()) // Copy temporaly the database of wallets in the case of changes on the enumeration done by a parallal process, update all of them.
+                            {
+                                try
                                 {
-                                    foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
+                                    if (Program.Exit)
                                     {
-                                        getSeedNodeRandom = seedNode.Key;
-                                        Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(seedNode.Key, ClassConnectorSetting.SeedNodeTokenPort));
-                                        taskCheckSeedNode.Wait(ClassConnectorSetting.MaxTimeoutConnect);
-                                        if (seedNodeSelected)
+                                        break;
+                                    }
+
+                                    if (seedNodeSelected)
+                                    {
+                                        if (!walletObject.Value.GetWalletUpdateStatus() && walletObject.Value.GetLastWalletUpdate() <= DateTimeOffset.Now.ToUnixTimeSeconds())
                                         {
-                                            break;
+                                            ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds() + ClassRpcSetting.WalletUpdateInterval);
+                                            ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].SetWalletOnUpdateStatus(true);
+                                            UpdateWalletTarget(getSeedNodeRandom, walletObject.Key);
                                         }
                                     }
                                 }
-                                else
+                                catch (Exception error)
                                 {
-                                    getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(0).Key;
-                                    seedNodeSelected = true;
+#if DEBUG
+                                    Console.WriteLine("Error on update wallet: " + walletObject.Key + " | Exception: " + error.Message);
+#endif
                                 }
-                                if (seedNodeSelected)
-                                {
-                                    if (!walletObject.Value.GetWalletUpdateStatus() && walletObject.Value.GetLastWalletUpdate() <= DateTimeOffset.Now.ToUnixTimeSeconds())
-                                    {
-                                        ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds() + ClassRpcSetting.WalletUpdateInterval);
-                                        ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].SetWalletOnUpdateStatus(true);
-                                        UpdateWalletTarget(getSeedNodeRandom, walletObject.Key);
-                                    }
-                                }
-                            }
-                            catch
-                            {
-
                             }
                         }
 
@@ -118,14 +124,14 @@ namespace Xiropht_Rpc_Wallet.Wallet
                             {
                                 ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(0);
 #if DEBUG
-                                Console.WriteLine("Wallet: " + walletAddress + " update failed.");
+                                Console.WriteLine("Wallet: " + walletAddress + " update failed. Node: "+getSeedNodeRandom);
 #endif
                             }
                             else
                             {
                                 ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds() + ClassRpcSetting.WalletUpdateInterval);
 #if DEBUG
-                                Console.WriteLine("Wallet: " + walletAddress + " updated successfully.");
+                                Console.WriteLine("Wallet: " + walletAddress + " updated successfully. Node: " + getSeedNodeRandom);
 #endif
                             }
                         }
@@ -137,7 +143,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         }
 #if DEBUG
                         stopwatch.Stop();
-                        Console.WriteLine("Wallet: " + walletAddress + " updated in: " + stopwatch.ElapsedMilliseconds + " ms.");
+                        Console.WriteLine("Wallet: " + walletAddress + " updated in: " + stopwatch.ElapsedMilliseconds + " ms. Node: " + getSeedNodeRandom);
 #endif
                         ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnUpdateStatus(false);
 
@@ -414,6 +420,9 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         catch (Exception error)
                         {
                             ClassConsole.ConsoleWriteLine("Error on send transaction from wallet: " + ClassRpcDatabase.RpcDatabaseContent[walletAddress] + " exception: " + error.Message, ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+#if DEBUG
+                            Console.WriteLine("Error on send transaction from wallet: " + ClassRpcDatabase.RpcDatabaseContent[walletAddress] + " exception: " + error.Message);
+#endif
                             ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnSendTransactionStatus(false);
                             return ClassRpcWalletCommand.SendTokenTransactionRefused + "|None";
                         }

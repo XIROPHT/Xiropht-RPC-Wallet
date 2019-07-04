@@ -131,7 +131,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
 
                                 if (encryptedQrCodeRestoreRequest != null)
                                 {
-                                    Thread.Sleep(1000);
+                                    await Task.Delay(1000);
                                     if (!await SendPacketBlockchainNetworkSeedNodeMode(ClassWalletCommand.ClassWalletSendEnumeration.AskPhase + "|" + encryptedQrCodeRestoreRequest))
                                     {
                                         FullDisconnection();
@@ -342,8 +342,17 @@ namespace Xiropht_Rpc_Wallet.Wallet
                             var publicKey = splitDecryptWalletDataCreate[2];
                             var privateKey = splitDecryptWalletDataCreate[3];
                             WalletAddressResult = walletAddress;
-                            ClassRpcDatabase.InsertNewWalletAsync(walletAddress, publicKey, privateKey, pinWallet, WalletPassword);
-                            WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorSuccess;
+                            if (ClassRpcDatabase.RpcDatabaseContent.Count < int.MaxValue - 1)
+                            {
+                                ClassRpcDatabase.InsertNewWalletAsync(walletAddress, publicKey, privateKey, pinWallet, WalletPassword);
+                                WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorSuccess;
+                            }
+                            else
+                            {
+                                WalletCreateResult = ClassWalletCreatorEnumeration.WalletCreatorError;
+                                ClassConsole.ConsoleWriteLine("Create wallet error, the maximum wallet of: " +(int.MaxValue-1).ToString("F0")+" has been reach.", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+
+                            }
                             FullDisconnection();
                         }
                     }

@@ -54,17 +54,16 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                                 ClassConsole.ConsoleWriteLine(ClassConsoleCommandLineEnumeration.CommandLineLogLevel + " -> change log level. Max log level: " + ClassConsole.MaxLogLevel, ClassConsoleColorEnumeration.IndexConsoleMagentaLog, Program.LogLevel);
                                 break;
                             case ClassConsoleCommandLineEnumeration.CommandLineCreateWallet:
-
                                 using (var walletCreatorObject = new ClassWalletCreator())
                                 {
 
-                                    new Thread(async delegate ()
+                                    await Task.Run(async delegate
                                     {
                                         if (!await walletCreatorObject.StartWalletConnectionAsync(ClassWalletPhase.Create, ClassUtility.MakeRandomWalletPassword()))
                                         {
                                             ClassConsole.ConsoleWriteLine("RPC Wallet cannot create a new wallet.", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
                                         }
-                                    }).Start();
+                                    }).ConfigureAwait(false);
 
 
                                     while (walletCreatorObject.WalletCreateResult == ClassWalletCreatorEnumeration.WalletCreatorPending)
@@ -82,10 +81,8 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                                             break;
                                     }
                                 }
-
                                 break;
                             case ClassConsoleCommandLineEnumeration.CommandLineRestoreWallet:
-
                                 if (splitCommandLine.Length < 2)
                                 {
                                     ClassConsole.ConsoleWriteLine("Please, put the wallet address to restore.", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
@@ -195,6 +192,13 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                                 {
                                     Thread.Sleep(100);
                                 }
+                                ClassConsole.ConsoleWriteLine("Waiting end of save RPC Wallet Backup Wallet Database System..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
+                                while (ClassRpcDatabase.InSaveBackup)
+                                {
+                                    Thread.Sleep(100);
+                                }
+                                ClassConsole.ConsoleWriteLine("Stop RPC Wallet Backup Wallet Database System..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
+                                ClassRpcDatabase.StopBackupWalletDatabaseSystem();
                                 ClassLog.StopLogSystem();
                                 ClassConsole.ConsoleWriteLine("RPC Wallet is successfully stopped, press ENTER to exit.", ClassConsoleColorEnumeration.IndexConsoleBlueLog, Program.LogLevel);
                                 Console.ReadLine();
