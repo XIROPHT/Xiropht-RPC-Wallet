@@ -47,7 +47,7 @@ http://127.0.0.1:8000/create_wallet
 
 ----------------------------------------------------------------------------------------
 
-<h3>1. create_wallet|max_timeout</h2>
+<h3>1. /create_wallet|max_timeout</h2>
 
 This command line permit to create a wallet from the API and return his wallet address.
 
@@ -61,7 +61,7 @@ This command line permit to create a wallet from the API and return his wallet a
 
 ----------------------------------------------------------------------------------------
 
-<h3>2. get_total_wallet_index</h2>
+<h3>2. /get_total_wallet_index</h2>
 
 This command line permit to return the total amount of wallet stored inside your RPC Wallet, this command line help on the case to use command lines by index. Like `/get_wallet_address_by_index|index`
 
@@ -75,7 +75,7 @@ This command line permit to return the total amount of wallet stored inside your
 
 ----------------------------------------------------------------------------------------
 
-<h3>3. get_wallet_address_by_index</h3>
+<h3>3. /get_wallet_address_by_index</h3>
 
 <h4>Ouput</h2>
 
@@ -244,7 +244,7 @@ Each transactions lines are parsed into json:
 
 ----------------------------------------------------------------------------------------
 
-<h3>14. send_transaction_by_wallet_address</h2>
+<h3>14. /send_transaction_by_wallet_address</h2>
 
 Return the status of the transaction, his transaction hash and the current balance of the wallet after sending.
 
