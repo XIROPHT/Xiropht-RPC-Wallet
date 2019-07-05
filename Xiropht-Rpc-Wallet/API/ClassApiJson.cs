@@ -50,4 +50,9 @@
         public string wallet_address;
         public long wallet_total_anonymous_transaction;
     }
+
+    public class ClassApiJsonTotalWalletCount
+    {
+        public long result;
+    }
 }

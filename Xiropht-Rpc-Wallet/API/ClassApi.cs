@@ -1090,7 +1090,22 @@ namespace Xiropht_Rpc_Wallet.API
                     switch (packet)
                     {
                         case ClassApiEnumeration.GetTotalWalletIndex:
-                            await BuildAndSendHttpPacketAsync("" + ClassRpcDatabase.RpcDatabaseContent.Count);
+
+                            var totalWalletObject = new ClassApiJsonTotalWalletCount()
+                            {
+                                result = ClassRpcDatabase.RpcDatabaseContent.Count
+                            };
+                            string data = JsonConvert.SerializeObject(totalWalletObject);
+
+                            StringBuilder builder = new StringBuilder();
+                            builder.AppendLine(@"HTTP/1.1 200 OK");
+                            builder.AppendLine(@"Content-Type: text/plain");
+                            builder.AppendLine(@"Content-Length: " + data.Length);
+                            builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                            builder.AppendLine(@"");
+                            builder.AppendLine(@"" + data);
+                            await SendPacketAsync(builder.ToString());
+                            builder.Clear();
                             break;
                         case ClassApiEnumeration.CreateWallet:
                             using (var walletCreatorObject = new ClassWalletCreator())
