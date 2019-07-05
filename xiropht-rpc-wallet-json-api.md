@@ -11,11 +11,13 @@ http://127.0.0.1:8000/command_line
 Every responses sent by the **API** are return in **json syntax** data asked, for example:
 
 <h4>Request</h4>
+
 ```
 http://127.0.0.1:8000/create_wallet
 ```
 
 <h4>Ouput</h4>
+
 ```
 {"result":"nJ22Xbi4dc2mBOo5XGynNkJDWzuXWX1Y00P7WIPKEhu5AuL82kbq1c78EPU","version":"0.0.2.2","date_packet":1562340803}
 ```
