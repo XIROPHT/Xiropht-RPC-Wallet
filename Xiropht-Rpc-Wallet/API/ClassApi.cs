@@ -208,7 +208,6 @@ namespace Xiropht_Rpc_Wallet.API
                 }
             }
 
-            int totalWhile = 0;
             if (isWhitelisted)
             {
                 try
@@ -261,10 +260,6 @@ namespace Xiropht_Rpc_Wallet.API
                                         break;
                                     }
                                     else
-                                    {
-                                        totalWhile++;
-                                    }
-                                    if (totalWhile >= 8)
                                     {
                                         break;
                                     }
@@ -546,7 +541,7 @@ namespace Xiropht_Rpc_Wallet.API
                                                             {
 
                                                                 var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
-                                                                if (!ListOfTransactionPerRange.ContainsKey(splitTransaction[2]))
+                                                                if (!ListOfTransactionPerRange.ContainsKey(splitTransaction[2] + walletObject.Key))
                                                                 {
 
                                                                     var transactionJsonObject = new ClassApiJsonTransaction()
@@ -565,7 +560,7 @@ namespace Xiropht_Rpc_Wallet.API
                                                                     };
 
 
-                                                                    ListOfTransactionPerRange.Add(splitTransaction[2], transactionJsonObject);
+                                                                    ListOfTransactionPerRange.Add(splitTransaction[2] + walletObject.Key, transactionJsonObject);
                                                                 }
                                                             }
                                                         }
@@ -587,7 +582,7 @@ namespace Xiropht_Rpc_Wallet.API
                                                             if (transaction != null)
                                                             {
                                                                 var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
-                                                                if (!ListOfTransactionPerRange.ContainsKey(splitTransaction[2]))
+                                                                if (!ListOfTransactionPerRange.ContainsKey(splitTransaction[2] + walletObject.Key))
                                                                 {
 
 
@@ -608,7 +603,7 @@ namespace Xiropht_Rpc_Wallet.API
                                                                     };
 
 
-                                                                    ListOfTransactionPerRange.Add(splitTransaction[2], transactionJsonObject);
+                                                                    ListOfTransactionPerRange.Add(splitTransaction[2] + walletObject.Key, transactionJsonObject);
                                                                 }
                                                             }
                                                         }
