@@ -94,8 +94,8 @@ This command line permit to return the total amount of wallet stored inside your
 | Field | Type | Description |
 | --- | --- | --- |
 | wallet_address | string | Return wallet address. |
-| wallet_balance | ulong | Return wallet balance. |
-| wallet_pending_balance | ulong | Return wallet pending balance. |
+| wallet_balance | double | Return wallet balance. |
+| wallet_pending_balance | double | Return wallet pending balance. |
 
 ----------------------------------------------------------------------------------------
 
@@ -106,8 +106,8 @@ This command line permit to return the total amount of wallet stored inside your
 | Field | Type | Description |
 | --- | --- | --- |
 | wallet_address | string | Return wallet address. |
-| wallet_balance | ulong | Return wallet balance. |
-| wallet_pending_balance | ulong | Return wallet pending balance. |
+| wallet_balance | double | Return wallet balance. |
+| wallet_pending_balance | double | Return wallet pending balance. |
 
 ----------------------------------------------------------------------------------------
 
@@ -167,8 +167,8 @@ This command line permit to return the total amount of wallet stored inside your
 | hash | string | Return transaction hash. |
 | mode | string | Return transaction mode (normal or anonymous). |
 | wallet_dst_or_src | string | Return wallet address of the target or the sender, depending the type of the transaction. |
-| amount | ulong | Return transaction amount. |
-| fee | ulong | Return transaction fee. |
+| amount | double | Return transaction amount. |
+| fee | double | Return transaction fee. |
 | timestamp_send | long | Return transaction timestamp of sending. |
 | timestamp_recv | long | Return transaction timestamp of receive. |
 | blockchain_height | string | Return blockchain height of the transaction. |
@@ -187,8 +187,8 @@ This command line permit to return the total amount of wallet stored inside your
 | hash | string | Return transaction hash. |
 | mode | string | Return transaction mode (normal or anonymous). |
 | wallet_dst_or_src | string | Return wallet address of the target or the sender, depending the type of the transaction. |
-| amount | ulong | Return transaction amount. |
-| fee | ulong | Return transaction fee. |
+| amount | double | Return transaction amount. |
+| fee | double | Return transaction fee. |
 | timestamp_send | long | Return transaction timestamp of sending. |
 | timestamp_recv | long | Return transaction timestamp of receive. |
 | blockchain_height | string | Return blockchain height of the transaction. |
@@ -207,8 +207,8 @@ This command line permit to return the total amount of wallet stored inside your
 | hash | string | Return transaction hash. |
 | mode | string | Return transaction mode (normal or anonymous). |
 | wallet_dst_or_src | string | Return wallet address of the target or the sender, depending the type of the transaction. |
-| amount | ulong | Return transaction amount. |
-| fee | ulong | Return transaction fee. |
+| amount | double | Return transaction amount. |
+| fee | double | Return transaction fee. |
 | timestamp_send | long | Return transaction timestamp of sending. |
 | timestamp_recv | long | Return transaction timestamp of receive. |
 | blockchain_height | string | Return blockchain height of the transaction. |
@@ -236,8 +236,8 @@ Each transactions lines are parsed into json:
 | hash | string | Return transaction hash. |
 | mode | string | Return transaction mode (normal or anonymous). |
 | wallet_dst_or_src | string | Return wallet address of the target or the sender, depending the type of the transaction. |
-| amount | ulong | Return transaction amount. |
-| fee | ulong | Return transaction fee. |
+| amount | double | Return transaction amount. |
+| fee | double | Return transaction fee. |
 | timestamp_send | long | Return transaction timestamp of sending. |
 | timestamp_recv | long | Return transaction timestamp of receive. |
 | blockchain_height | string | Return blockchain height of the transaction. |
@@ -253,8 +253,8 @@ Return the status of the transaction, his transaction hash and the current balan
 | --- | --- | --- |
 | result | string | Return status of the transaction. |
 | hash | string | Return transaction hash. |
-| wallet_balance | ulong | Return current wallet balance. |
-| wallet_pending_balance | ulong | Return current wallet pending balance. |
+| wallet_balance | double | Return current wallet balance. |
+| wallet_pending_balance | double | Return current wallet pending balance. |
 
 **List of response received once you send a transaction:**
 
