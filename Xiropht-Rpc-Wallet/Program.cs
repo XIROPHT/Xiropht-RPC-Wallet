@@ -39,51 +39,49 @@ namespace Xiropht_Rpc_Wallet
                 ClassConsole.ConsoleWriteLine("Please write your rpc wallet password for decrypt your databases of wallet (Input keys are hidden): ", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
                 ClassRpcDatabase.SetRpcDatabasePassword(ClassUtility.GetHiddenConsoleInput());
                 ClassConsole.ConsoleWriteLine("RPC Wallet Database loading..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
-                if (ClassRpcDatabase.LoadRpcDatabaseFile())
+                while (!ClassRpcDatabase.LoadRpcDatabaseFile())
                 {
-                    ClassConsole.ConsoleWriteLine("RPC Wallet Database successfully loaded.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
-                    ClassConsole.ConsoleWriteLine("RPC Sync Database loading..", ClassConsoleColorEnumeration.IndexConsoleYellowLog,LogLevel);
-                    if (ClassSyncDatabase.InitializeSyncDatabase())
-                    {
+                    ClassConsole.ConsoleWriteLine("Cannot read RPC Wallet Database, the password is wrong. If the problem persist the database is probably wrong.", ClassConsoleColorEnumeration.IndexConsoleRedLog, LogLevel);
+                    ClassConsole.ConsoleWriteLine("Please write your rpc wallet password for decrypt your databases of wallet (Input keys are hidden): ", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
+                    ClassRpcDatabase.SetRpcDatabasePassword(ClassUtility.GetHiddenConsoleInput());
+                }
 
-                        ClassConsole.ConsoleWriteLine("RPC Sync Database successfully loaded.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
-                        if (ClassRpcSetting.WalletEnableAutoUpdateWallet)
-                        {
-                            ClassConsole.ConsoleWriteLine("Enable Auto Update Wallet System..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
-                            ClassWalletUpdater.EnableAutoUpdateWallet();
-                            ClassConsole.ConsoleWriteLine("Enable Auto Update Wallet System done.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
-                        }
-                        ClassConsole.ConsoleWriteLine("Start RPC Wallet API Server..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
-                        ClassApi.StartApiHttpServer();
-                        ClassConsole.ConsoleWriteLine("Start RPC Wallet API Server sucessfully started.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
-                        if (ClassRpcSetting.RpcWalletEnableRemoteNodeSync && ClassRpcSetting.RpcWalletRemoteNodeHost != string.Empty && ClassRpcSetting.RpcWalletRemoteNodePort != 0)
-                        {
-                            ClassConsole.ConsoleWriteLine("RPC Remote Node Sync system loading..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
-                            ThreadRemoteNodeSync = new Thread(async () => await ClassRemoteSync.ConnectRpcWalletToRemoteNodeSyncAsync());
-                            ThreadRemoteNodeSync.Start();
-                        }
-                        if (ClassRpcSetting.WalletEnableBackupSystem)
-                        {
-                            ClassRpcDatabase.EnableBackupWalletDatabaseSystem();
-                        }
-                        ClassConsole.ConsoleWriteLine("Enable Command Line system.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
-                        ClassConsoleCommandLine.EnableConsoleCommandLine();
-                    }
-                    else
+                ClassConsole.ConsoleWriteLine("RPC Wallet Database successfully loaded.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
+                ClassConsole.ConsoleWriteLine("RPC Sync Database loading..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
+                if (ClassSyncDatabase.InitializeSyncDatabase())
+                {
+
+                    ClassConsole.ConsoleWriteLine("RPC Sync Database successfully loaded.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
+                    if (ClassRpcSetting.WalletEnableAutoUpdateWallet)
                     {
-                        ClassConsole.ConsoleWriteLine("Cannot read RPC Sync Database, the database is maybe corrupted.", ClassConsoleColorEnumeration.IndexConsoleRedLog, LogLevel);
-                        Console.WriteLine("Press ENTER to exit.");
-                        Console.ReadLine();
-                        Environment.Exit(0);
+                        ClassConsole.ConsoleWriteLine("Enable Auto Update Wallet System..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
+                        ClassWalletUpdater.EnableAutoUpdateWallet();
+                        ClassConsole.ConsoleWriteLine("Enable Auto Update Wallet System done.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
                     }
+                    ClassConsole.ConsoleWriteLine("Start RPC Wallet API Server..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
+                    ClassApi.StartApiHttpServer();
+                    ClassConsole.ConsoleWriteLine("Start RPC Wallet API Server sucessfully started.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
+                    if (ClassRpcSetting.RpcWalletEnableRemoteNodeSync && ClassRpcSetting.RpcWalletRemoteNodeHost != string.Empty && ClassRpcSetting.RpcWalletRemoteNodePort != 0)
+                    {
+                        ClassConsole.ConsoleWriteLine("RPC Remote Node Sync system loading..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
+                        ThreadRemoteNodeSync = new Thread(async () => await ClassRemoteSync.ConnectRpcWalletToRemoteNodeSyncAsync());
+                        ThreadRemoteNodeSync.Start();
+                    }
+                    if (ClassRpcSetting.WalletEnableBackupSystem)
+                    {
+                        ClassRpcDatabase.EnableBackupWalletDatabaseSystem();
+                    }
+                    ClassConsole.ConsoleWriteLine("Enable Command Line system.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
+                    ClassConsoleCommandLine.EnableConsoleCommandLine();
                 }
                 else
                 {
-                    ClassConsole.ConsoleWriteLine("Cannot read RPC Wallet Database, the database is maybe corrupted.", ClassConsoleColorEnumeration.IndexConsoleRedLog, LogLevel);
+                    ClassConsole.ConsoleWriteLine("Cannot read RPC Sync Database, the database is maybe corrupted.", ClassConsoleColorEnumeration.IndexConsoleRedLog, LogLevel);
                     Console.WriteLine("Press ENTER to exit.");
                     Console.ReadLine();
                     Environment.Exit(0);
                 }
+
             }
             else
             {
