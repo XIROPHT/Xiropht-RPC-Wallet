@@ -236,7 +236,7 @@ Each transactions lines are parsed into json:
 
 ----------------------------------------------------------------------------------------
 
-<h3>13. send_transaction_by_wallet_address</h2>
+<h3>14. send_transaction_by_wallet_address</h2>
 
 Return the status of the transaction, his transaction hash and the current balance of the wallet after sending.
 
