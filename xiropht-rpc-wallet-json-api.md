@@ -63,7 +63,7 @@ This command line permit to create a wallet from the API and return his wallet a
 
 <h3>2. get_total_wallet_index</h2>
 
-This command line permit to return the total amount of wallet stored inside your RPC Wallet, this command line help on the case to use command lines by index. Like `/get_wallet_address_by_index\|index`
+This command line permit to return the total amount of wallet stored inside your RPC Wallet, this command line help on the case to use command lines by index. Like `/get_wallet_address_by_index|index`
 
 <h4>Ouput</h4>
 
