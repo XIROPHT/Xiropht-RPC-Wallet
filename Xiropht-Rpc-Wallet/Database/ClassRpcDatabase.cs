@@ -243,6 +243,24 @@ namespace Xiropht_Rpc_Wallet.Database
                             }
                             ClassConsole.ConsoleWriteLine("RPC Wallet save successfully backup of wallet database in: " + backupFilePath, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
                         }
+                        if (ClassRpcSetting.WalletEnableAutoRemoveBackupSystem)
+                        {
+                            var fileNames = Directory.EnumerateFiles(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcDatabaseBackupDirectory), "*.*", SearchOption.TopDirectoryOnly);
+                            if (fileNames.Count() > 0)
+                            {
+                                foreach(var backupFileNameSaved in fileNames)
+                                {
+                                    DateTime backupFileNameSavedDate = File.GetLastWriteTime(backupFileNameSaved);
+                                    long backupFileNameSavedDateSecond = ((long)(backupFileNameSavedDate - new DateTime(1970, 1, 1)).TotalSeconds);
+                                    if (DateTimeOffset.Now.ToUnixTimeSeconds() - backupFileNameSavedDateSecond > ClassRpcSetting.WalletBackupLapsingTimeLimit)
+                                    {
+                                        File.Delete(backupFileNameSaved);
+                                        ClassConsole.ConsoleWriteLine("Old backup file removed: "+backupFileNameSaved, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
+                                    }
+                                }
+                            }
+
+                        }
                     }
                     catch (Exception error)
                     {
