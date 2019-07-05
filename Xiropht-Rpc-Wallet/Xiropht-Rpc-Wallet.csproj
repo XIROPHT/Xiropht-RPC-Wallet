@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API\ClassApi.cs" />
+    <Compile Include="API\ClassApiJson.cs" />
     <Compile Include="ConsoleObject\ClassConsoleCommandLine.cs" />
     <Compile Include="Database\ClassRpcDatabase.cs" />
     <Compile Include="Log\ClassLog.cs" />

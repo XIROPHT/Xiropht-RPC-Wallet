@@ -246,7 +246,9 @@ namespace Xiropht_Rpc_Wallet.Database
                     }
                     catch (Exception error)
                     {
+#if DEBUG
                         ClassConsole.ConsoleWriteLine("RPC Wallet save error backup of wallet database | Exception: " + error.Message, ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
+#endif
                     }
                     InSaveBackup = false;
                     Thread.Sleep(ClassRpcSetting.WalletIntervalBackupSystem*1000);

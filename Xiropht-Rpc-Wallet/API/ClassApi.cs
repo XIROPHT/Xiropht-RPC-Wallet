@@ -367,15 +367,26 @@ namespace Xiropht_Rpc_Wallet.API
                                 if (!ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletUpdateStatus())
                                 {
                                     await ClassWalletUpdater.UpdateWallet(splitPacket[1]);
-                                    Dictionary<string, string> walletUpdateContent = new Dictionary<string, string>()
-                                {
-                                    {"wallet_address", splitPacket[1] },
-                                    {"wallet_balance", ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletBalance() },
-                                    {"wallet_pending_balance", ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletPendingBalance() },
-                                    {"wallet_unique_id", ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletUniqueId() },
-                                    {"wallet_unique_anonymous_id", ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletAnonymousUniqueId() },
-                                };
-                                    await BuildAndSendHttpPacketAsync(string.Empty, true, walletUpdateContent);
+
+                                    var walletUpdateJsonObject = new ClassApiJsonWalletUpdate()
+                                    {
+                                        wallet_address = splitPacket[1],
+                                        wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletBalance()),
+                                        wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletPendingBalance()),
+                                        wallet_unique_id = long.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletUniqueId()),
+                                        wallet_unique_anonymous_id = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletAnonymousUniqueId())
+                                    };
+
+                                    string data = JsonConvert.SerializeObject(walletUpdateJsonObject);
+                                    StringBuilder builder = new StringBuilder();
+                                    builder.AppendLine(@"HTTP/1.1 200 OK");
+                                    builder.AppendLine(@"Content-Type: text/plain");
+                                    builder.AppendLine(@"Content-Length: " + data.Length);
+                                    builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                    builder.AppendLine(@"");
+                                    builder.AppendLine(@"" + data);
+                                    await SendPacketAsync(builder.ToString());
+                                    builder.Clear();
                                     break;
                                 }
                                 else
@@ -399,18 +410,29 @@ namespace Xiropht_Rpc_Wallet.API
                                     if (counter == walletIndexUpdate)
                                     {
                                         found = true;
-                                        if (!walletObject.Value.GetWalletUpdateStatus())
+                                        if (!ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletUpdateStatus())
                                         {
                                             await ClassWalletUpdater.UpdateWallet(walletObject.Key);
-                                            Dictionary<string, string> walletUpdateContent = new Dictionary<string, string>()
-                                        {
-                                            {"wallet_address", walletObject.Key },
-                                            {"wallet_balance", walletObject.Value.GetWalletBalance() },
-                                            {"wallet_pending_balance", walletObject.Value.GetWalletPendingBalance() },
-                                            {"wallet_unique_id", walletObject.Value.GetWalletUniqueId() },
-                                            {"wallet_unique_anonymous_id", walletObject.Value.GetWalletAnonymousUniqueId() },
-                                        };
-                                            await BuildAndSendHttpPacketAsync(string.Empty, true, walletUpdateContent);
+
+                                            var walletUpdateJsonObject = new ClassApiJsonWalletUpdate()
+                                            {
+                                                wallet_address = walletObject.Key,
+                                                wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletBalance()),
+                                                wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletPendingBalance()),
+                                                wallet_unique_id = long.Parse(ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletUniqueId()),
+                                                wallet_unique_anonymous_id = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletAnonymousUniqueId())
+                                            };
+
+                                            string data = JsonConvert.SerializeObject(walletUpdateJsonObject);
+                                            StringBuilder builder = new StringBuilder();
+                                            builder.AppendLine(@"HTTP/1.1 200 OK");
+                                            builder.AppendLine(@"Content-Type: text/plain");
+                                            builder.AppendLine(@"Content-Length: " + data.Length);
+                                            builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                            builder.AppendLine(@"");
+                                            builder.AppendLine(@"" + data);
+                                            await SendPacketAsync(builder.ToString());
+                                            builder.Clear();
                                             break;
                                         }
                                         else
@@ -466,13 +488,24 @@ namespace Xiropht_Rpc_Wallet.API
                                     if (counter == walletIndex2)
                                     {
                                         found = true;
-                                        Dictionary<string, string> walletBalanceContent = new Dictionary<string, string>()
-                                    {
-                                        {"wallet_address", walletObject.Key },
-                                        {"wallet_balance", walletObject.Value.GetWalletBalance() },
-                                        {"wallet_pending_balance", walletObject.Value.GetWalletPendingBalance() }
-                                    };
-                                        await BuildAndSendHttpPacketAsync(null, true, walletBalanceContent);
+
+                                        var walletBalanceJsonObject = new ClassApiJsonWalletBalance()
+                                        {
+                                            wallet_address = walletObject.Key,
+                                            wallet_balance = decimal.Parse(walletObject.Value.GetWalletBalance()),
+                                            wallet_pending_balance = decimal.Parse(walletObject.Value.GetWalletPendingBalance()),
+                                        };
+
+                                        string data = JsonConvert.SerializeObject(walletBalanceJsonObject);
+                                        StringBuilder builder = new StringBuilder();
+                                        builder.AppendLine(@"HTTP/1.1 200 OK");
+                                        builder.AppendLine(@"Content-Type: text/plain");
+                                        builder.AppendLine(@"Content-Length: " + data.Length);
+                                        builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                        builder.AppendLine(@"");
+                                        builder.AppendLine(@"" + data);
+                                        await SendPacketAsync(builder.ToString());
+                                        builder.Clear();
                                         break;
                                     }
                                 }
@@ -494,7 +527,7 @@ namespace Xiropht_Rpc_Wallet.API
                                     if (ClassRpcDatabase.RpcDatabaseContent.Count > 0)
                                     {
                                         long totalTransactionTravel = 0;
-                                        Dictionary<string, string> ListOfTransactionPerRange = new Dictionary<string, string>();
+                                        Dictionary<string, ClassApiJsonTransaction> ListOfTransactionPerRange = new Dictionary<string, ClassApiJsonTransaction>();
                                         foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent.ToArray())
                                         {
 
@@ -515,30 +548,24 @@ namespace Xiropht_Rpc_Wallet.API
                                                                 var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
                                                                 if (!ListOfTransactionPerRange.ContainsKey(splitTransaction[2]))
                                                                 {
-                                                                    var type = splitTransaction[1];
-                                                                    var hash = splitTransaction[2];
-                                                                    var walletDst = splitTransaction[3];
-                                                                    var amount = splitTransaction[4];
-                                                                    var fee = splitTransaction[5];
-                                                                    var timestampSend = splitTransaction[6];
-                                                                    var timestampRecv = splitTransaction[7];
-                                                                    var blockchainHeight = splitTransaction[8];
 
-                                                                    Dictionary<string, string> walletTransactionContent = new Dictionary<string, string>()
+                                                                    var transactionJsonObject = new ClassApiJsonTransaction()
                                                                     {
-                                                                        {"wallet_address", walletObject.Key },
-                                                                        {"index", (i+1).ToString("F0") },
-                                                                        {"type", splitTransaction[0] },
-                                                                        {"mode", type },
-                                                                        {"hash", hash },
-                                                                        {"wallet_dst_or_src", walletDst },
-                                                                        {"amount", amount },
-                                                                        {"fee", fee },
-                                                                        {"timestamp_send", timestampSend },
-                                                                        {"timestamp_recv", timestampRecv },
-                                                                        {"blockchain_height", blockchainHeight }
+                                                                        index = (i + 1),
+                                                                        wallet_address = walletObject.Key,
+                                                                        mode = splitTransaction[0],
+                                                                        type = splitTransaction[1],
+                                                                        hash = splitTransaction[2],
+                                                                        wallet_dst_or_src = splitTransaction[3],
+                                                                        amount = decimal.Parse(splitTransaction[4]),
+                                                                        fee = decimal.Parse(splitTransaction[5]),
+                                                                        timestamp_send = long.Parse(splitTransaction[6]),
+                                                                        timestamp_recv = long.Parse(splitTransaction[7]),
+                                                                        blockchain_height = splitTransaction[8]
                                                                     };
-                                                                    ListOfTransactionPerRange.Add(hash, BuildFullJsonString(walletTransactionContent));
+
+
+                                                                    ListOfTransactionPerRange.Add(splitTransaction[2], transactionJsonObject);
                                                                 }
                                                             }
                                                         }
@@ -562,30 +589,26 @@ namespace Xiropht_Rpc_Wallet.API
                                                                 var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
                                                                 if (!ListOfTransactionPerRange.ContainsKey(splitTransaction[2]))
                                                                 {
-                                                                    var type = splitTransaction[1];
-                                                                    var hash = splitTransaction[2];
-                                                                    var walletDst = splitTransaction[3];
-                                                                    var amount = splitTransaction[4];
-                                                                    var fee = splitTransaction[5];
-                                                                    var timestampSend = splitTransaction[6];
-                                                                    var timestampRecv = splitTransaction[7];
-                                                                    var blockchainHeight = splitTransaction[8];
 
-                                                                    Dictionary<string, string> walletTransactionContent = new Dictionary<string, string>()
+
+
+                                                                    var transactionJsonObject = new ClassApiJsonTransaction()
                                                                     {
-                                                                        {"wallet_address", walletObject.Key },
-                                                                        {"index", (i+1).ToString("F0") },
-                                                                        {"type", splitTransaction[0] },
-                                                                        {"mode", type },
-                                                                        {"hash", hash },
-                                                                        {"wallet_dst_or_src", walletDst },
-                                                                        {"amount", amount },
-                                                                        {"fee", fee },
-                                                                        {"timestamp_send", timestampSend },
-                                                                        {"timestamp_recv", timestampRecv },
-                                                                        {"blockchain_height", blockchainHeight }
+                                                                        index = (i + 1),
+                                                                        wallet_address = walletObject.Key,
+                                                                        mode = splitTransaction[0],
+                                                                        type = splitTransaction[1],
+                                                                        hash = splitTransaction[2],
+                                                                        wallet_dst_or_src = splitTransaction[3],
+                                                                        amount = decimal.Parse(splitTransaction[4]),
+                                                                        fee = decimal.Parse(splitTransaction[5]),
+                                                                        timestamp_send = long.Parse(splitTransaction[6]),
+                                                                        timestamp_recv = long.Parse(splitTransaction[7]),
+                                                                        blockchain_height = splitTransaction[8]
                                                                     };
-                                                                    ListOfTransactionPerRange.Add(hash, BuildFullJsonString(walletTransactionContent));
+
+
+                                                                    ListOfTransactionPerRange.Add(splitTransaction[2], transactionJsonObject);
                                                                 }
                                                             }
                                                         }
@@ -595,11 +618,8 @@ namespace Xiropht_Rpc_Wallet.API
                                         }
                                         if (ListOfTransactionPerRange.Count > 0)
                                         {
-                                            string data = string.Empty;
-                                            foreach (var transaction in ListOfTransactionPerRange)
-                                            {
-                                                data += transaction.Value + "\n";
-                                            }
+                                            string data = JsonConvert.SerializeObject(ListOfTransactionPerRange.Values.ToArray());
+
                                             StringBuilder builder = new StringBuilder();
                                             builder.AppendLine(@"HTTP/1.1 200 OK");
                                             builder.AppendLine(@"Content-Type: text/plain");
@@ -636,13 +656,23 @@ namespace Xiropht_Rpc_Wallet.API
                         case ClassApiEnumeration.GetWalletBalanceByWalletAddress:
                             if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(splitPacket[1]))
                             {
-                                Dictionary<string, string> walletBalanceContent = new Dictionary<string, string>()
+                                var walletBalanceJsonObject = new ClassApiJsonWalletBalance()
                                 {
-                                 {"wallet_address", splitPacket[1] },
-                                 {"wallet_balance", ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletBalance() },
-                                 {"wallet_pending_balance", ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletPendingBalance() }
+                                    wallet_address = splitPacket[1],
+                                    wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletBalance()),
+                                    wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletPendingBalance()),
                                 };
-                                await BuildAndSendHttpPacketAsync(null, true, walletBalanceContent);
+
+                                string data = JsonConvert.SerializeObject(walletBalanceJsonObject);
+                                StringBuilder builder = new StringBuilder();
+                                builder.AppendLine(@"HTTP/1.1 200 OK");
+                                builder.AppendLine(@"Content-Type: text/plain");
+                                builder.AppendLine(@"Content-Length: " + data.Length);
+                                builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                builder.AppendLine(@"");
+                                builder.AppendLine(@"" + data);
+                                await SendPacketAsync(builder.ToString());
+                                builder.Clear();
                             }
                             else
                             {
@@ -661,27 +691,48 @@ namespace Xiropht_Rpc_Wallet.API
                                 {
                                     string result = await ClassWalletUpdater.ProceedTransactionTokenRequestAsync(walletAddressSource, amount, fee, walletAddressTarget, true);
                                     var splitResult = result.Split(new[] { "|" }, StringSplitOptions.None);
-                                    Dictionary<string, string> walletTransactionContent = new Dictionary<string, string>()
-                                {
-                                    {"result", splitResult[0] },
-                                    {"hash", splitResult[1].ToLower() },
-                                    {"wallet_balance", ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletBalance() },
-                                    {"wallet_pending_balance", ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletPendingBalance() }
-                                };
-                                    await BuildAndSendHttpPacketAsync(string.Empty, true, walletTransactionContent);
+                                    var sendTransactionJsonObject = new ClassApiJsonSendTransaction()
+                                    {
+                                        result = splitResult[0],
+                                        hash = splitResult[1].ToLower(),
+                                        wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletBalance()),
+                                        wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletPendingBalance()),
+                                    };
+
+                                    string data = JsonConvert.SerializeObject(sendTransactionJsonObject);
+                                    StringBuilder builder = new StringBuilder();
+                                    builder.AppendLine(@"HTTP/1.1 200 OK");
+                                    builder.AppendLine(@"Content-Type: text/plain");
+                                    builder.AppendLine(@"Content-Length: " + data.Length);
+                                    builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                    builder.AppendLine(@"");
+                                    builder.AppendLine(@"" + data);
+                                    await SendPacketAsync(builder.ToString());
+                                    builder.Clear();
                                 }
                                 else
                                 {
                                     string result = await ClassWalletUpdater.ProceedTransactionTokenRequestAsync(walletAddressSource, amount, fee, walletAddressTarget, false);
                                     var splitResult = result.Split(new[] { "|" }, StringSplitOptions.None);
-                                    Dictionary<string, string> walletTransactionContent = new Dictionary<string, string>()
-                                {
-                                    {"result", splitResult[0] },
-                                    {"hash", splitResult[1].ToLower() },
-                                    {"wallet_balance", ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletBalance() },
-                                    {"wallet_pending_balance", ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletPendingBalance() }
-                                };
-                                    await BuildAndSendHttpPacketAsync(string.Empty, true, walletTransactionContent);
+
+                                    var sendTransactionJsonObject = new ClassApiJsonSendTransaction()
+                                    {
+                                        result = splitResult[0],
+                                        hash = splitResult[1].ToLower(),
+                                        wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletBalance()),
+                                        wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletPendingBalance()),
+                                    };
+
+                                    string data = JsonConvert.SerializeObject(sendTransactionJsonObject);
+                                    StringBuilder builder = new StringBuilder();
+                                    builder.AppendLine(@"HTTP/1.1 200 OK");
+                                    builder.AppendLine(@"Content-Type: text/plain");
+                                    builder.AppendLine(@"Content-Length: " + data.Length);
+                                    builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                    builder.AppendLine(@"");
+                                    builder.AppendLine(@"" + data);
+                                    await SendPacketAsync(builder.ToString());
+                                    builder.Clear();
                                 }
                             }
                             else
@@ -746,13 +797,22 @@ namespace Xiropht_Rpc_Wallet.API
                                     if (counter == walletIndex3)
                                     {
                                         found = true;
-                                        Dictionary<string, string> walletTotalTransactionContent = new Dictionary<string, string>()
+
+                                        var walletTotalTransactionJsonObject = new ClassApiJsonWalletTotalTransaction()
                                         {
-                                            {"wallet_address", walletObject.Key },
-                                            {"wallet_total_transaction", ""+ walletObject.Value.GetWalletTotalTransactionSync() }
+                                            wallet_address = walletObject.Key,
+                                            wallet_total_transaction = walletObject.Value.GetWalletTotalTransactionSync()
                                         };
-                                        await BuildAndSendHttpPacketAsync(null, true, walletTotalTransactionContent);
-                                        break;
+                                        string data = JsonConvert.SerializeObject(walletTotalTransactionJsonObject);
+                                        StringBuilder builder = new StringBuilder();
+                                        builder.AppendLine(@"HTTP/1.1 200 OK");
+                                        builder.AppendLine(@"Content-Type: text/plain");
+                                        builder.AppendLine(@"Content-Length: " + data.Length);
+                                        builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                        builder.AppendLine(@"");
+                                        builder.AppendLine(@"" + data);
+                                        await SendPacketAsync(builder.ToString());
+                                        builder.Clear();
                                     }
                                 }
                                 if (!found)
@@ -776,13 +836,21 @@ namespace Xiropht_Rpc_Wallet.API
                                     if (counter == walletIndex4)
                                     {
                                         found = true;
-                                        Dictionary<string, string> walletTotalAnonymousTransactionContent = new Dictionary<string, string>()
+                                        var walletTotalTransactionJsonObject = new ClassApiJsonWalletTotalAnonymousTransaction()
                                         {
-                                            {"wallet_address", walletObject.Key },
-                                            {"wallet_total_anonymous_transaction", ""+ walletObject.Value.GetWalletTotalAnonymousTransactionSync() }
+                                            wallet_address = walletObject.Key,
+                                            wallet_total_anonymous_transaction = walletObject.Value.GetWalletTotalAnonymousTransactionSync()
                                         };
-                                        await BuildAndSendHttpPacketAsync(null, true, walletTotalAnonymousTransactionContent);
-                                        break;
+                                        string data = JsonConvert.SerializeObject(walletTotalTransactionJsonObject);
+                                        StringBuilder builder = new StringBuilder();
+                                        builder.AppendLine(@"HTTP/1.1 200 OK");
+                                        builder.AppendLine(@"Content-Type: text/plain");
+                                        builder.AppendLine(@"Content-Length: " + data.Length);
+                                        builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                        builder.AppendLine(@"");
+                                        builder.AppendLine(@"" + data);
+                                        await SendPacketAsync(builder.ToString());
+                                        builder.Clear();
                                     }
                                 }
                                 if (!found)
@@ -798,12 +866,21 @@ namespace Xiropht_Rpc_Wallet.API
                         case ClassApiEnumeration.GetWalletTotalTransactionByWalletAddress:
                             if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(splitPacket[1]))
                             {
-                                Dictionary<string, string> walletTotalTransactionContent = new Dictionary<string, string>()
-                            {
-                                            {"wallet_address", splitPacket[1] },
-                                            {"wallet_total_transaction", ""+ ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletTotalTransactionSync() }
-                            };
-                                await BuildAndSendHttpPacketAsync(null, true, walletTotalTransactionContent);
+                                var walletTotalTransactionJsonObject = new ClassApiJsonWalletTotalTransaction()
+                                {
+                                    wallet_address = splitPacket[1],
+                                    wallet_total_transaction = ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletTotalTransactionSync()
+                                };
+                                string data = JsonConvert.SerializeObject(walletTotalTransactionJsonObject);
+                                StringBuilder builder = new StringBuilder();
+                                builder.AppendLine(@"HTTP/1.1 200 OK");
+                                builder.AppendLine(@"Content-Type: text/plain");
+                                builder.AppendLine(@"Content-Length: " + data.Length);
+                                builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                builder.AppendLine(@"");
+                                builder.AppendLine(@"" + data);
+                                await SendPacketAsync(builder.ToString());
+                                builder.Clear();
                             }
                             else
                             {
@@ -813,12 +890,21 @@ namespace Xiropht_Rpc_Wallet.API
                         case ClassApiEnumeration.GetWalletTotalAnonymousTransactionByWalletAddress:
                             if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(splitPacket[1]))
                             {
-                                Dictionary<string, string> walletTotalAnonymousTransactionContent = new Dictionary<string, string>()
-                            {
-                                            {"wallet_address", splitPacket[1] },
-                                            {"wallet_total_anonymous_transaction", ""+ ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletTotalAnonymousTransactionSync() }
-                            };
-                                await BuildAndSendHttpPacketAsync(null, true, walletTotalAnonymousTransactionContent);
+                                var walletTotalTransactionJsonObject = new ClassApiJsonWalletTotalAnonymousTransaction()
+                                {
+                                    wallet_address = splitPacket[1],
+                                    wallet_total_anonymous_transaction = ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletTotalAnonymousTransactionSync()
+                                };
+                                string data = JsonConvert.SerializeObject(walletTotalTransactionJsonObject);
+                                StringBuilder builder = new StringBuilder();
+                                builder.AppendLine(@"HTTP/1.1 200 OK");
+                                builder.AppendLine(@"Content-Type: text/plain");
+                                builder.AppendLine(@"Content-Length: " + data.Length);
+                                builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                builder.AppendLine(@"");
+                                builder.AppendLine(@"" + data);
+                                await SendPacketAsync(builder.ToString());
+                                builder.Clear();
                             }
                             else
                             {
@@ -838,29 +924,33 @@ namespace Xiropht_Rpc_Wallet.API
                                         if (transaction != null)
                                         {
                                             var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
-                                            var type = splitTransaction[1];
-                                            var hash = splitTransaction[2];
-                                            var walletDst = splitTransaction[3];
-                                            var amount = splitTransaction[4];
-                                            var fee = splitTransaction[5];
-                                            var timestampSend = splitTransaction[6];
-                                            var timestampRecv = splitTransaction[7];
-                                            var blockchainHeight = splitTransaction[8];
 
-                                            Dictionary<string, string> walletTransactionContent = new Dictionary<string, string>()
+                                            var transactionJsonObject = new ClassApiJsonTransaction()
                                             {
-                                                {"index", (transactionIndex+1).ToString("F0") },
-                                                {"type", splitTransaction[0] },
-                                                {"mode", type },
-                                                {"hash", hash },
-                                                {"wallet_dst_or_src", walletDst },
-                                                {"amount", amount },
-                                                {"fee", fee },
-                                                {"timestamp_send", timestampSend },
-                                                {"timestamp_recv", timestampRecv },
-                                                {"blockchain_height", blockchainHeight }
+                                                index = (transactionIndex + 1),
+                                                wallet_address = splitPacket[1],
+                                                mode = splitTransaction[0],
+                                                type = splitTransaction[1],
+                                                hash = splitTransaction[2],
+                                                wallet_dst_or_src = splitTransaction[3],
+                                                amount = decimal.Parse(splitTransaction[4]),
+                                                fee = decimal.Parse(splitTransaction[5]),
+                                                timestamp_send = long.Parse(splitTransaction[6]),
+                                                timestamp_recv = long.Parse(splitTransaction[7]),
+                                                blockchain_height = splitTransaction[8]
                                             };
-                                            await BuildAndSendHttpPacketAsync(null, true, walletTransactionContent);
+
+                                            string data = JsonConvert.SerializeObject(transactionJsonObject);
+
+                                            StringBuilder builder = new StringBuilder();
+                                            builder.AppendLine(@"HTTP/1.1 200 OK");
+                                            builder.AppendLine(@"Content-Type: text/plain");
+                                            builder.AppendLine(@"Content-Length: " + data.Length);
+                                            builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                            builder.AppendLine(@"");
+                                            builder.AppendLine(@"" + data);
+                                            await SendPacketAsync(builder.ToString());
+                                            builder.Clear();
                                         }
                                         else
                                         {
@@ -895,29 +985,33 @@ namespace Xiropht_Rpc_Wallet.API
                                         if (transaction != null)
                                         {
                                             var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
-                                            var type = splitTransaction[1];
-                                            var hash = splitTransaction[2];
-                                            var walletDst = splitTransaction[3];
-                                            var amount = splitTransaction[4];
-                                            var fee = splitTransaction[5];
-                                            var timestampSend = splitTransaction[6];
-                                            var timestampRecv = splitTransaction[7];
-                                            var blockchainHeight = splitTransaction[8];
 
-                                            Dictionary<string, string> walletAnonymousTransactionContent = new Dictionary<string, string>()
+                                            var transactionJsonObject = new ClassApiJsonTransaction()
                                             {
-                                                {"index", (transactionIndex+1).ToString("F0") },
-                                                {"type", splitTransaction[0]  },
-                                                {"mode", type },
-                                                {"hash", hash },
-                                                {"wallet_dst_or_src", walletDst },
-                                                {"amount", amount },
-                                                {"fee", fee },
-                                                {"timestamp_send", timestampSend },
-                                                {"timestamp_recv", timestampRecv },
-                                                {"blockchain_height", blockchainHeight }
+                                                index = (transactionIndex + 1),
+                                                wallet_address = splitPacket[1],
+                                                mode = splitTransaction[0],
+                                                type = splitTransaction[1],
+                                                hash = splitTransaction[2],
+                                                wallet_dst_or_src = splitTransaction[3],
+                                                amount = decimal.Parse(splitTransaction[4]),
+                                                fee = decimal.Parse(splitTransaction[5]),
+                                                timestamp_send = long.Parse(splitTransaction[6]),
+                                                timestamp_recv = long.Parse(splitTransaction[7]),
+                                                blockchain_height = splitTransaction[8]
                                             };
-                                            await BuildAndSendHttpPacketAsync(null, true, walletAnonymousTransactionContent);
+
+                                            string data = JsonConvert.SerializeObject(transactionJsonObject);
+
+                                            StringBuilder builder = new StringBuilder();
+                                            builder.AppendLine(@"HTTP/1.1 200 OK");
+                                            builder.AppendLine(@"Content-Type: text/plain");
+                                            builder.AppendLine(@"Content-Length: " + data.Length);
+                                            builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                            builder.AppendLine(@"");
+                                            builder.AppendLine(@"" + data);
+                                            await SendPacketAsync(builder.ToString());
+                                            builder.Clear();
                                         }
                                         else
                                         {
@@ -948,30 +1042,33 @@ namespace Xiropht_Rpc_Wallet.API
                                 if (transaction != null)
                                 {
                                     var splitTransaction = transaction.Item2.Split(new[] { "#" }, StringSplitOptions.None);
-                                    var type = splitTransaction[1];
-                                    var hash = splitTransaction[2];
-                                    var walletDst = splitTransaction[3];
-                                    var amount = splitTransaction[4];
-                                    var fee = splitTransaction[5];
-                                    var timestampSend = splitTransaction[6];
-                                    var timestampRecv = splitTransaction[7];
-                                    var blockchainHeight = splitTransaction[8];
 
-                                    Dictionary<string, string> walletTransactionContent = new Dictionary<string, string>()
+                                    var transactionJsonObject = new ClassApiJsonTransaction()
                                     {
-                                        {"index", "" + transaction.Item1 },
-                                        {"type", splitTransaction[0] },
-                                        {"mode", type },
-                                        {"hash", hash },
-                                        {"wallet_dst_or_src", walletDst },
-                                        {"amount", amount },
-                                        {"fee", fee },
-                                        {"timestamp_send", timestampSend },
-                                        {"timestamp_recv", timestampRecv },
-                                        {"blockchain_height", blockchainHeight }
-
+                                        index = (transaction.Item1+1),
+                                        wallet_address = splitPacket[1],
+                                        mode = splitTransaction[0],
+                                        type = splitTransaction[1],
+                                        hash = splitTransaction[2],
+                                        wallet_dst_or_src = splitTransaction[3],
+                                        amount = decimal.Parse(splitTransaction[4]),
+                                        fee = decimal.Parse(splitTransaction[5]),
+                                        timestamp_send = long.Parse(splitTransaction[6]),
+                                        timestamp_recv = long.Parse(splitTransaction[7]),
+                                        blockchain_height = splitTransaction[8]
                                     };
-                                    await BuildAndSendHttpPacketAsync(null, true, walletTransactionContent);
+
+                                    string data = JsonConvert.SerializeObject(transactionJsonObject);
+
+                                    StringBuilder builder = new StringBuilder();
+                                    builder.AppendLine(@"HTTP/1.1 200 OK");
+                                    builder.AppendLine(@"Content-Type: text/plain");
+                                    builder.AppendLine(@"Content-Length: " + data.Length);
+                                    builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                    builder.AppendLine(@"");
+                                    builder.AppendLine(@"" + data);
+                                    await SendPacketAsync(builder.ToString());
+                                    builder.Clear();
                                 }
                                 else
                                 {
@@ -1063,7 +1160,7 @@ namespace Xiropht_Rpc_Wallet.API
             }
             StringBuilder builder = new StringBuilder();
             builder.AppendLine(@"HTTP/1.1 200 OK");
-            builder.AppendLine(@"Content-Type: text/plain");
+            builder.AppendLine(@"Content-Type: application/json");
             builder.AppendLine(@"Content-Length: " + contentToSend.Length);
             builder.AppendLine(@"Access-Control-Allow-Origin: *");
             builder.AppendLine(@"");
@@ -1104,6 +1201,23 @@ namespace Xiropht_Rpc_Wallet.API
             jsonContent.Add("version", Assembly.GetExecutingAssembly().GetName().Version.ToString());
             jsonContent.Add("date_packet", DateTimeOffset.Now.ToUnixTimeSeconds());
             return JsonConvert.SerializeObject(jsonContent);
+        }
+
+        /// <summary>
+        /// Return json object content converted for json.
+        /// </summary>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        private JObject BuildFullJsonObject(Dictionary<string, string> dictionaryContent)
+        {
+            JObject jsonContent = new JObject();
+            foreach (var content in dictionaryContent)
+            {
+                jsonContent.Add(content.Key, content.Value);
+            }
+            jsonContent.Add("version", Assembly.GetExecutingAssembly().GetName().Version.ToString());
+            jsonContent.Add("date_packet", DateTimeOffset.Now.ToUnixTimeSeconds());
+            return jsonContent;
         }
 
         /// <summary>
