@@ -244,7 +244,7 @@ Each transactions lines are parsed into json:
 
 ----------------------------------------------------------------------------------------
 
-<h3>14. /send_transaction_by_wallet_address</h2>
+<h3>14. /send_transaction_by_wallet_address|wallet_address_source|amount|fee|anonymous_option(0 or 1)|wallet_address_target</h2>
 
 Return the status of the transaction, his transaction hash and the current balance of the wallet after sending.
 
