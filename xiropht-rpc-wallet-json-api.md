@@ -216,7 +216,7 @@ This command line permit to return the total amount of wallet stored inside your
 
 ----------------------------------------------------------------------------------------
 
-<h3>13./get_whole_wallet_transaction_by_range|start|end	</h3>
+<h3>13. /get_whole_wallet_transaction_by_range|start|end	</h3>
 
 <h4>Ouput</h2>
 
