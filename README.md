@@ -37,11 +37,7 @@ Features:
 
 
 
-- Command line system:
-
-  -> Permit to change the log level for see what's going on every systems one by one. 
-  
-  -> Permit to create manualy a new wallet and store it inside the database encrypted.
+- Command line in program side: https://github.com/XIROPHT/Xiropht-RPC-Wallet/wiki/List-of-command-lines-in-RPC-Wallet-program-side
  
 **Newtonsoft.Json library is used since version 0.0.0.1R for the API HTTP/HTTPS system: https://github.com/JamesNK/Newtonsoft.Json**
 
