@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -366,10 +367,10 @@ namespace Xiropht_Rpc_Wallet.API
                                     var walletUpdateJsonObject = new ClassApiJsonWalletUpdate()
                                     {
                                         wallet_address = splitPacket[1],
-                                        wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletBalance()),
-                                        wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletPendingBalance()),
+                                        wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                        wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletPendingBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
                                         wallet_unique_id = long.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletUniqueId()),
-                                        wallet_unique_anonymous_id = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletAnonymousUniqueId())
+                                        wallet_unique_anonymous_id = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletAnonymousUniqueId(), NumberStyles.Currency, Program.GlobalCultureInfo)
                                     };
 
                                     string data = JsonConvert.SerializeObject(walletUpdateJsonObject);
@@ -412,10 +413,10 @@ namespace Xiropht_Rpc_Wallet.API
                                             var walletUpdateJsonObject = new ClassApiJsonWalletUpdate()
                                             {
                                                 wallet_address = walletObject.Key,
-                                                wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletBalance()),
-                                                wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletPendingBalance()),
+                                                wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletPendingBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
                                                 wallet_unique_id = long.Parse(ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletUniqueId()),
-                                                wallet_unique_anonymous_id = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletAnonymousUniqueId())
+                                                wallet_unique_anonymous_id = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletAnonymousUniqueId(), NumberStyles.Currency, Program.GlobalCultureInfo)
                                             };
 
                                             string data = JsonConvert.SerializeObject(walletUpdateJsonObject);
@@ -487,8 +488,8 @@ namespace Xiropht_Rpc_Wallet.API
                                         var walletBalanceJsonObject = new ClassApiJsonWalletBalance()
                                         {
                                             wallet_address = walletObject.Key,
-                                            wallet_balance = decimal.Parse(walletObject.Value.GetWalletBalance()),
-                                            wallet_pending_balance = decimal.Parse(walletObject.Value.GetWalletPendingBalance()),
+                                            wallet_balance = decimal.Parse(walletObject.Value.GetWalletBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                            wallet_pending_balance = decimal.Parse(walletObject.Value.GetWalletPendingBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
                                         };
 
                                         string data = JsonConvert.SerializeObject(walletBalanceJsonObject);
@@ -552,8 +553,8 @@ namespace Xiropht_Rpc_Wallet.API
                                                                         type = splitTransaction[1],
                                                                         hash = splitTransaction[2],
                                                                         wallet_dst_or_src = splitTransaction[3],
-                                                                        amount = decimal.Parse(splitTransaction[4]),
-                                                                        fee = decimal.Parse(splitTransaction[5]),
+                                                                        amount = decimal.Parse(splitTransaction[4], NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                                        fee = decimal.Parse(splitTransaction[5], NumberStyles.Currency, Program.GlobalCultureInfo),
                                                                         timestamp_send = long.Parse(splitTransaction[6]),
                                                                         timestamp_recv = long.Parse(splitTransaction[7]),
                                                                         blockchain_height = splitTransaction[8]
@@ -595,8 +596,8 @@ namespace Xiropht_Rpc_Wallet.API
                                                                         type = splitTransaction[1],
                                                                         hash = splitTransaction[2],
                                                                         wallet_dst_or_src = splitTransaction[3],
-                                                                        amount = decimal.Parse(splitTransaction[4]),
-                                                                        fee = decimal.Parse(splitTransaction[5]),
+                                                                        amount = decimal.Parse(splitTransaction[4], NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                                        fee = decimal.Parse(splitTransaction[5], NumberStyles.Currency, Program.GlobalCultureInfo),
                                                                         timestamp_send = long.Parse(splitTransaction[6]),
                                                                         timestamp_recv = long.Parse(splitTransaction[7]),
                                                                         blockchain_height = splitTransaction[8]
@@ -654,8 +655,8 @@ namespace Xiropht_Rpc_Wallet.API
                                 var walletBalanceJsonObject = new ClassApiJsonWalletBalance()
                                 {
                                     wallet_address = splitPacket[1],
-                                    wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletBalance()),
-                                    wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletPendingBalance()),
+                                    wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                    wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletPendingBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
                                 };
 
                                 string data = JsonConvert.SerializeObject(walletBalanceJsonObject);
@@ -690,8 +691,8 @@ namespace Xiropht_Rpc_Wallet.API
                                     {
                                         result = splitResult[0],
                                         hash = splitResult[1].ToLower(),
-                                        wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletBalance()),
-                                        wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletPendingBalance()),
+                                        wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                        wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletPendingBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
                                     };
 
                                     string data = JsonConvert.SerializeObject(sendTransactionJsonObject);
@@ -714,8 +715,8 @@ namespace Xiropht_Rpc_Wallet.API
                                     {
                                         result = splitResult[0],
                                         hash = splitResult[1].ToLower(),
-                                        wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletBalance()),
-                                        wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletPendingBalance()),
+                                        wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                        wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletPendingBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
                                     };
 
                                     string data = JsonConvert.SerializeObject(sendTransactionJsonObject);
@@ -928,8 +929,8 @@ namespace Xiropht_Rpc_Wallet.API
                                                 type = splitTransaction[1],
                                                 hash = splitTransaction[2],
                                                 wallet_dst_or_src = splitTransaction[3],
-                                                amount = decimal.Parse(splitTransaction[4]),
-                                                fee = decimal.Parse(splitTransaction[5]),
+                                                amount = decimal.Parse(splitTransaction[4], NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                fee = decimal.Parse(splitTransaction[5], NumberStyles.Currency, Program.GlobalCultureInfo),
                                                 timestamp_send = long.Parse(splitTransaction[6]),
                                                 timestamp_recv = long.Parse(splitTransaction[7]),
                                                 blockchain_height = splitTransaction[8]
@@ -989,8 +990,8 @@ namespace Xiropht_Rpc_Wallet.API
                                                 type = splitTransaction[1],
                                                 hash = splitTransaction[2],
                                                 wallet_dst_or_src = splitTransaction[3],
-                                                amount = decimal.Parse(splitTransaction[4]),
-                                                fee = decimal.Parse(splitTransaction[5]),
+                                                amount = decimal.Parse(splitTransaction[4], NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                fee = decimal.Parse(splitTransaction[5], NumberStyles.Currency, Program.GlobalCultureInfo),
                                                 timestamp_send = long.Parse(splitTransaction[6]),
                                                 timestamp_recv = long.Parse(splitTransaction[7]),
                                                 blockchain_height = splitTransaction[8]
@@ -1046,8 +1047,8 @@ namespace Xiropht_Rpc_Wallet.API
                                         type = splitTransaction[1],
                                         hash = splitTransaction[2],
                                         wallet_dst_or_src = splitTransaction[3],
-                                        amount = decimal.Parse(splitTransaction[4]),
-                                        fee = decimal.Parse(splitTransaction[5]),
+                                        amount = decimal.Parse(splitTransaction[4], NumberStyles.Currency, Program.GlobalCultureInfo),
+                                        fee = decimal.Parse(splitTransaction[5], NumberStyles.Currency, Program.GlobalCultureInfo),
                                         timestamp_send = long.Parse(splitTransaction[6]),
                                         timestamp_recv = long.Parse(splitTransaction[7]),
                                         blockchain_height = splitTransaction[8]

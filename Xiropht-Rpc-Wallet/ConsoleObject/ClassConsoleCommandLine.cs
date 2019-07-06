@@ -199,6 +199,7 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                                 }
                                 ClassConsole.ConsoleWriteLine("Stop RPC Wallet Backup Wallet Database System..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, Program.LogLevel);
                                 ClassRpcDatabase.StopBackupWalletDatabaseSystem();
+                                await ClassRpcDatabase.SaveWholeRpcWalletDatabaseFile();
                                 ClassLog.StopLogSystem();
                                 ClassConsole.ConsoleWriteLine("RPC Wallet is successfully stopped, press ENTER to exit.", ClassConsoleColorEnumeration.IndexConsoleBlueLog, Program.LogLevel);
                                 Console.ReadLine();

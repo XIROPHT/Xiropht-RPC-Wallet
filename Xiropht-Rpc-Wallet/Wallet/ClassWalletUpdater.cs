@@ -369,7 +369,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
             using (Stream stream = response.GetResponseStream())
             using (StreamReader reader = new StreamReader(stream))
             {
-               return await reader.ReadToEndAsync();
+               return await reader.ReadLineAsync();
                
             }
         }
