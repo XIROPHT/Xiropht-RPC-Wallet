@@ -23,6 +23,14 @@
         public decimal wallet_pending_balance;
     }
 
+    public class ClassApiJsonSendTransfer
+    {
+        public string result;
+        public string hash;
+        public decimal wallet_balance;
+        public decimal wallet_pending_balance;
+    }
+
     public class ClassApiJsonWalletBalance
     {
         public string wallet_address;

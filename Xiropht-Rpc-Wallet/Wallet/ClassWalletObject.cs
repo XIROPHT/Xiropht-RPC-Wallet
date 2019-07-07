@@ -24,6 +24,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         private Dictionary<string, string> WalletListOfAnonymousTransaction;
         private string WalletContentReadLine;
         private bool WalletInUpdate;
+        private Tuple<bool, string> WalletCurrentToken;
 
         /// <summary>
         /// Constructor
@@ -51,6 +52,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
             WalletListOfAnonymousTransaction = new Dictionary<string, string>();
             WalletContentReadLine = walletContentReadLine;
             WalletInUpdate = false;
+            WalletCurrentToken = new Tuple<bool, string>(false, string.Empty);
         }
 
         /// <summary>
@@ -164,6 +166,18 @@ namespace Xiropht_Rpc_Wallet.Wallet
         {
             WalletPinCode = walletPinCode;
         }
+
+        public void SetWalletCurrentToken(bool status, string token)
+        {
+            WalletCurrentToken = new Tuple<bool, string>(status, token);
+        }
+
+
+        public Tuple<bool, string>  GetWalletCurrentToken()
+        {
+            return WalletCurrentToken;
+        }
+
 
         /// <summary>
         /// Insert a transaction sync on the wallet.

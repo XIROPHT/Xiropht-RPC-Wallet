@@ -96,6 +96,13 @@ namespace Xiropht_Rpc_Wallet.Utility
             return FinalString;
         }
 
+        public static string RemoveHTTPHeader(string packet)
+        {
+            return GetStringBetween(packet, "{", "}");
+        }
+
+
+
         /// <summary>
         /// Make a new genesis key for dynamic encryption.
         /// </summary>

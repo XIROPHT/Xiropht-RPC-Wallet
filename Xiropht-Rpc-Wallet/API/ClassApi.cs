@@ -37,6 +37,7 @@ namespace Xiropht_Rpc_Wallet.API
         public const string GetWalletAnonymousTransaction = "get_wallet_anonymous_transaction"; // Get a selected anonymous transaction by an index selected and a wallet address selected.
         public const string GetWalletTransactionByHash = "get_wallet_transaction_by_hash"; // Get a selected transaction by a transaction hash selected and a wallet address selected.
         public const string SendTransactionByWalletAddress = "send_transaction_by_wallet_address"; // Sent a transaction from a selected wallet address.
+        public const string SendTransferByWalletAddress = "send_transfer_by_wallet_address"; // Sent a transfer from a selected wallet address.
         public const string UpdateWalletByAddress = "update_wallet_by_address"; // Update manually a selected wallet by his address target.
         public const string UpdateWalletByIndex = "update_wallet_by_index"; // Update manually a selected wallet by his index target.
         public const string CreateWallet = "create_wallet"; // Create a new wallet, return wallet address.
@@ -730,6 +731,42 @@ namespace Xiropht_Rpc_Wallet.API
                                     await SendPacketAsync(builder.ToString());
                                     builder.Clear();
                                 }
+                            }
+                            else
+                            {
+                                await BuildAndSendHttpPacketAsync(ClassApiEnumeration.PacketNotExist);
+                            }
+                            break;
+
+                        case ClassApiEnumeration.SendTransferByWalletAddress:
+                            if (splitPacket.Length >= 3)
+                            {
+                                var walletAddressSource = splitPacket[1];
+                                var amount = splitPacket[2];
+                                var walletAddressTarget = splitPacket[3];
+
+                                string result = await ClassWalletUpdater.ProceedTransferTokenRequestAsync(walletAddressSource, amount, walletAddressTarget);
+                                var splitResult = result.Split(new[] { "|" }, StringSplitOptions.None);
+
+                                var sendTransactionJsonObject = new ClassApiJsonSendTransfer()
+                                {
+                                    result = splitResult[0],
+                                    hash = splitResult[1].ToLower(),
+                                    wallet_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                    wallet_pending_balance = decimal.Parse(ClassRpcDatabase.RpcDatabaseContent[walletAddressSource].GetWalletPendingBalance(), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                };
+
+                                string data = JsonConvert.SerializeObject(sendTransactionJsonObject);
+                                StringBuilder builder = new StringBuilder();
+                                builder.AppendLine(@"HTTP/1.1 200 OK");
+                                builder.AppendLine(@"Content-Type: text/plain");
+                                builder.AppendLine(@"Content-Length: " + data.Length);
+                                builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                builder.AppendLine(@"");
+                                builder.AppendLine(@"" + data);
+                                await SendPacketAsync(builder.ToString());
+                                builder.Clear();
+
                             }
                             else
                             {
