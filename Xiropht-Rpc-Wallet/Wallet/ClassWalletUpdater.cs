@@ -424,14 +424,19 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     {
                         tokenWallet = ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletCurrentToken().Item2;
                         ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletCurrentToken(false, string.Empty);
-                        string encryptedRequest = string.Empty;
 
-                        string keyTargetRequest = walletAddressTarget + ClassRpcDatabase.RpcDatabaseContent[walletAddressTarget].GetWalletPublicKey() + ClassRpcDatabase.RpcDatabaseContent[walletAddressTarget].GetWalletPassword() + ClassRpcDatabase.RpcDatabaseContent[walletAddressTarget].GetWalletPrivateKey();
-
+                        string privateKeyTarget = ClassRpcDatabase.RpcDatabaseContent[walletAddressTarget].GetWalletPrivateKey(); 
+                        if (privateKeyTarget.Contains("$"))
+                        {
+                            privateKeyTarget = privateKeyTarget.Split(new[] { "$" }, StringSplitOptions.None)[0];
+                        }
+                        string keyTargetRequest = walletAddressTarget + ClassRpcDatabase.RpcDatabaseContent[walletAddressTarget].GetWalletPublicKey() + ClassRpcDatabase.RpcDatabaseContent[walletAddressTarget].GetWalletPassword() + privateKeyTarget;
                         string encryptedTargetRequest = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, amount, keyTargetRequest, ClassWalletNetworkSetting.KeySize);
 
-                        encryptedRequest = ClassRpcWalletCommand.TokenAskWalletTransfer + "|" + tokenWallet + "|" + walletAddressTarget + "|" + encryptedTargetRequest + "|" + (DateTimeOffset.Now.ToUnixTimeSeconds() + 1).ToString("F0");
+
+                        string encryptedRequest = ClassRpcWalletCommand.TokenAskWalletTransfer + "|" + tokenWallet + "|" + walletAddressTarget + "|" + encryptedTargetRequest + "|" + (DateTimeOffset.Now.ToUnixTimeSeconds() + 1).ToString("F0");
                         encryptedRequest = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, encryptedRequest, walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey() + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPassword(), ClassWalletNetworkSetting.KeySize);
+
                         string responseWallet = await ProceedTokenRequestHttpAsync("http://" + getSeedNodeRandom + ":" + ClassConnectorSetting.SeedNodeTokenPort + "/" + ClassConnectorSettingEnumeration.WalletTokenType + "|" + walletAddress + "|" + encryptedRequest);
 
                         ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnUpdateStatus(false);
