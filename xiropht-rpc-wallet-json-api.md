@@ -44,6 +44,7 @@ http://127.0.0.1:8000/create_wallet
 | `/send_transaction_by_wallet_address\|wallet_address_source\|amount\|fee\|anonymous_option(0 or 1)\|wallet_address_target` | Send a transaction by a selected wallet address source, with a selected amount and fee, by anonymous option or not to a target wallet address.| 
 | `/update_wallet_by_address\|wallet_address` | Update manually informations current balance, pending balance of the wallet address target.|
 | `/update_wallet_by_index\|wallet_index` | Update manually informations current balance, pending balance of the wallet index target.|
+| `/send_transfer_by_wallet_address\|wallet_address_source\|amount\|wallet_address_target` | Send a transfer by a selected wallet address source, with a selected amount, to a target wallet address (of course it's functionnal for wallets stored inside RPC Wallet who contain their key's).| 
 
 ----------------------------------------------------------------------------------------
 
@@ -266,6 +267,46 @@ Return the status of the transaction, his transaction hash and the current balan
 
 -> `SEND-TOKEN-TRANSACTION-INVALID-TARGET` the transaction sent is refused, because the wallet address target is invalid.
 
+<h3>15. /update_wallet_by_index|index</h3>
+
+| Field | Type | Description |
+| --- | --- | --- |
+| wallet_address | string | Return wallet address. |
+| wallet_balance | double | Return current wallet balance. |
+| wallet_pending_balance | double | Return current wallet pending balance. |
+| wallet_unique_id | long | Return unique wallet id. |
+| wallet_unique_anonymous_id | double | Return unique wallet anonymous id. |
+
+
+<h3>16. /update_wallet_by_address|wallet_address</h3>
+
+| Field | Type | Description |
+| --- | --- | --- |
+| wallet_address | string | Return wallet address. |
+| wallet_balance | double | Return current wallet balance. |
+| wallet_pending_balance | double | Return current wallet pending balance. |
+| wallet_unique_id | long | Return unique wallet id. |
+| wallet_unique_anonymous_id | double | Return unique wallet anonymous id. |
+
+<h3>17. /send_transfer_by_wallet_address|wallet_address_source|amount|wallet_address_target</h2>
+
+Return the status of the transfer, his transaction hash and the current balance of the wallet after sending.
+
+
+| Field | Type | Description |
+| --- | --- | --- |
+| result | string | Return status of the transaction. |
+| hash | string | Return transaction hash. |
+| wallet_balance | double | Return current wallet balance. |
+| wallet_pending_balance | double | Return current wallet pending balance. |
+
+**List of response received once you send a transfer:**
+
+-> `SEND-TOKEN-TRANSFER-CONFIRMED` the transfer sent is confirmed.
+
+-> `SEND-TOKEN-TRANSFER-REFUSED` the transfer sent is refused. (For example: Amount insufficient)
+
+-> `SEND-TOKEN-TRANSFER-BUSY` the transfer sent is refused, because the blockchain check your balance.
 
 ## 2. Use the encryption key option to send requests encrypted
 
