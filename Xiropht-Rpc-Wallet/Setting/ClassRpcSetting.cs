@@ -58,7 +58,7 @@ namespace Xiropht_Rpc_Wallet.Setting
 
         public static bool WalletEnableBackupSystem = true; // Enable auto backup system of current wallet database content.
 
-        public static int WalletIntervalBackupSystem = 60; // Interval of backup current wallet database content.
+        public static int WalletIntervalBackupSystem = 3600; // Interval of backup current wallet database content.
 
         public static bool WalletEnableAutoRemoveBackupSystem = false; // Enable auto remove backup system.
 
