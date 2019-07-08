@@ -527,7 +527,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                 {
                     settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingEnableBackupWalletSystem + "=N");
                 }
-                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletUpdateInterval + "=" + WalletIntervalBackupSystem);
+                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingIntervalBackupWalletSystem + "=" + WalletIntervalBackupSystem);
                 if (WalletEnableAutoRemoveBackupSystem)
                 {
                     settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingEnableBackupWalletAutoRemoveSystem + "=Y");
