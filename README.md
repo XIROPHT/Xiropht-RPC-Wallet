@@ -39,6 +39,8 @@ Features:
 
 - Command line in program side: https://github.com/XIROPHT/Xiropht-RPC-Wallet/wiki/List-of-command-lines-in-RPC-Wallet-program-side
  
+- How to setting manually the configuration file: https://github.com/XIROPHT/Xiropht-RPC-Wallet/wiki/How-to-setting-Xiropht-RPC-Wallet-configuration-file
+
 **Newtonsoft.Json library is used since version 0.0.0.1R for the API HTTP/HTTPS system: https://github.com/JamesNK/Newtonsoft.Json**
 
 **External library used: ZXing.Net, a QR Code generator used since version 0.0.1.6R: https://github.com/micjahn/ZXing.Net/**
