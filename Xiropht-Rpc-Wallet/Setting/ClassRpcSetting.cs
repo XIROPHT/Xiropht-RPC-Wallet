@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -29,9 +30,32 @@ namespace Xiropht_Rpc_Wallet.Setting
 
     }
 
+
+    public class ClassRpcSettingObject
+    {
+        public int rpc_wallet_api_port;
+        public List<string> rpc_wallet_api_ip_whitelist;
+        public string rpc_wallet_api_ip_bind;
+        public string rpc_wallet_key_request_encryption;
+        public bool rpc_wallet_api_enable_x_forwarded_for_resolver;
+        public bool rpc_wallet_enable_remote_node_sync;
+        public string rpc_wallet_remote_node_host;
+        public int rpc_wallet_remote_node_port;
+        public bool wallet_enable_auto_update;
+        public int wallet_update_interval;
+        public int wallet_max_keep_alive_update;
+        public bool wallet_enable_backup_system;
+        public int wallet_interval_backup_system;
+        public bool wallet_enable_auto_remove_backup_system;
+        public int wallet_backup_lapsing_time_limit;
+        public bool wallet_enable_auto_clean_log;
+        public int wallet_auto_clean_log_interval;
+    }
+
     public class ClassRpcSetting
     {
-        private const string RpcWalletSettingFile = "\\config.ini";
+        private const string RpcWalletSettingFile = "\\config.json";
+        private const string RpcWalletSettingOldFile = "\\config.ini";
         private const int RpcApiKeyMinSize = 8;
 
         public static int RpcWalletApiPort = 8000; // RPC Wallet API Default port.
@@ -64,6 +88,10 @@ namespace Xiropht_Rpc_Wallet.Setting
 
         public static int WalletBackupLapsingTimeLimit = 84600; // Each wallet backup file date more than this limit are deleted.
 
+        public static bool WalletEnableAutoCleanLog = true; // Enable auto clean logs.
+
+        public static int WalletAutoCleanLogInterval = 3600; // Interval of cleanup logs.
+
 
         /// <summary>
         /// Initialize setting of RPC Wallet
@@ -75,244 +103,354 @@ namespace Xiropht_Rpc_Wallet.Setting
             {
                 if (File.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)))
                 {
-                    bool containUpdate = false;
-
+                    bool invalidSetting = false;
+                    ClassRpcSettingObject jsonRpcWalletSettingObject = null;
                     using (var streamReaderConfigPool = new StreamReader(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)))
                     {
-                        int numberOfLines = 0;
                         string line = string.Empty;
+                        string jsonContent = string.Empty;
                         while ((line = streamReaderConfigPool.ReadLine()) != null)
                         {
-                            numberOfLines++;
                             if (!string.IsNullOrEmpty(line))
                             {
                                 if (!line.StartsWith("/"))
                                 {
-                                    if (line.Contains("="))
-                                    {
-                                        var splitLine = line.Split(new[] { "=" }, StringSplitOptions.None);
-                                        if (splitLine.Length > 1)
-                                        {
+                                    jsonContent += line;
+                                }
+                            }
+                        }
 
-                                            try
+                        try
+                        {
+                            jsonRpcWalletSettingObject = JsonConvert.DeserializeObject<ClassRpcSettingObject>(jsonContent);
+                        }
+                        catch
+                        {
+                            invalidSetting = true;
+                        }
+                    }
+                    if (invalidSetting)
+                    {
+                        ClassConsole.ConsoleWriteLine("Configuration file of RPC Wallet is invalid, do you want to create a new setting? [Y/N]", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                        bool choose = Console.ReadLine().ToLower() == "y";
+                        if (choose)
+                        {
+                            File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)).Close();
+                            MakeRpcWalletSetting();
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        if (jsonRpcWalletSettingObject != null)
+                        {
+                            bool error = false;
+                            WalletEnableBackupSystem = jsonRpcWalletSettingObject.wallet_enable_backup_system;
+                            WalletIntervalBackupSystem = jsonRpcWalletSettingObject.wallet_interval_backup_system;
+                            WalletEnableAutoRemoveBackupSystem = jsonRpcWalletSettingObject.wallet_enable_auto_remove_backup_system;
+                            WalletBackupLapsingTimeLimit = jsonRpcWalletSettingObject.wallet_backup_lapsing_time_limit;
+                            if (IPAddress.TryParse(jsonRpcWalletSettingObject.rpc_wallet_api_ip_bind, out var ipAddress))
+                            {
+                                RpcWalletApiIpBind = jsonRpcWalletSettingObject.rpc_wallet_api_ip_bind;
+                            }
+                            else
+                            {
+                                Console.WriteLine("Error on configuration, Exception: " + jsonRpcWalletSettingObject.rpc_wallet_api_ip_bind + " is not an IP.");
+                            }
+                            RpcWalletApiPort = jsonRpcWalletSettingObject.rpc_wallet_api_port;
+                            RpcWalletApiIpWhitelist = jsonRpcWalletSettingObject.rpc_wallet_api_ip_whitelist;
+                            if (RpcWalletApiIpWhitelist == null)
+                            {
+                                RpcWalletApiIpWhitelist = new List<string>();
+                            }
+                            RpcWalletApiKeyRequestEncryption = jsonRpcWalletSettingObject.rpc_wallet_key_request_encryption;
+                            RpcWalletEnableRemoteNodeSync = jsonRpcWalletSettingObject.rpc_wallet_enable_remote_node_sync;
+                            RpcWalletRemoteNodeHost = jsonRpcWalletSettingObject.rpc_wallet_remote_node_host;
+                            RpcWalletRemoteNodePort = jsonRpcWalletSettingObject.rpc_wallet_remote_node_port;
+                            WalletEnableAutoUpdateWallet = jsonRpcWalletSettingObject.wallet_enable_auto_update;
+                            WalletUpdateInterval = jsonRpcWalletSettingObject.wallet_update_interval;
+                            WalletMaxKeepAliveUpdate = jsonRpcWalletSettingObject.wallet_max_keep_alive_update;
+                            RpcWalletApiEnableXForwardedForResolver = jsonRpcWalletSettingObject.rpc_wallet_api_enable_x_forwarded_for_resolver;
+                            WalletEnableAutoCleanLog = jsonRpcWalletSettingObject.wallet_enable_auto_clean_log;
+                            WalletAutoCleanLogInterval = jsonRpcWalletSettingObject.wallet_auto_clean_log_interval;
+
+                            if (error)
+                            {
+                                ClassConsole.ConsoleWriteLine("Configuration file of RPC Wallet seems to contain some errors, do you want to continue? [Y/N]", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                                bool choose = Console.ReadLine().ToLower() == "y";
+                                if (!choose)
+                                {
+                                    return false;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ClassConsole.ConsoleWriteLine("Configuration file of RPC Wallet is invalid, do you want to create a new setting? [Y/N]", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                            bool choose = Console.ReadLine().ToLower() == "y";
+                            if (choose)
+                            {
+                                File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)).Close();
+                                MakeRpcWalletSetting();
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (File.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingOldFile)))
+                    {
+                        bool containUpdate = false;
+
+                        using (var streamReaderConfigPool = new StreamReader(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingOldFile)))
+                        {
+                            int numberOfLines = 0;
+                            string line = string.Empty;
+                            while ((line = streamReaderConfigPool.ReadLine()) != null)
+                            {
+                                numberOfLines++;
+                                if (!string.IsNullOrEmpty(line))
+                                {
+                                    if (!line.StartsWith("/"))
+                                    {
+                                        if (line.Contains("="))
+                                        {
+                                            var splitLine = line.Split(new[] { "=" }, StringSplitOptions.None);
+                                            if (splitLine.Length > 1)
                                             {
+
+                                                try
+                                                {
 #if DEBUG
                                                 Console.WriteLine("Config line read: " + splitLine[0] + " argument read: " + splitLine[1]);
 #endif
-                                                switch (splitLine[0])
-                                                {
-                                                    case ClassRpcSettingEnumeration.SettingEnableBackupWalletSystem:
-                                                        if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
-                                                        {
-                                                            WalletEnableBackupSystem = true;
-                                                        }
-                                                        else
-                                                        {
-                                                            WalletEnableBackupSystem = false;
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingIntervalBackupWalletSystem:
-                                                        if (int.TryParse(splitLine[1], out var intervalBackupSystem))
-                                                        {
-                                                            WalletIntervalBackupSystem = intervalBackupSystem;
-                                                        }
-                                                        else
-                                                        {
-                                                            Console.WriteLine("Error on line: "+ ClassRpcSettingEnumeration.SettingIntervalBackupWalletSystem+ ", use default interval: "+WalletIntervalBackupSystem);
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingEnableBackupWalletAutoRemoveSystem:
-                                                        if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
-                                                        {
-                                                            WalletEnableAutoRemoveBackupSystem = true;
-                                                        }
-                                                        else
-                                                        {
-                                                            WalletEnableAutoRemoveBackupSystem = false;
-                                                        }
-                                                        containUpdate = true;
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingWalletBackupLapsingTimeLimit:
-                                                        if (int.TryParse(splitLine[1], out var laspingTimeLimit))
-                                                        {
-                                                            WalletBackupLapsingTimeLimit = laspingTimeLimit;
-                                                        }
-                                                        else
-                                                        {
-                                                            Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines + " | Exception: " + splitLine[1] + ", use default lapsing timelimit: " + WalletBackupLapsingTimeLimit);
-                                                        }
-                                                        containUpdate = true;
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingApiIpBindSetting:
-                                                        if (IPAddress.TryParse(splitLine[1], out var ipAddress))
-                                                        {
-                                                            RpcWalletApiIpBind = splitLine[1];
-                                                        }
-                                                        else
-                                                        {
-                                                            Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines + " | Exception: " + splitLine[1] + " is not an IP.");
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingApiPortSetting:
-                                                        if (splitLine.Length > 1)
-                                                        {
-                                                            if (int.TryParse(splitLine[1], out var rpcApiPort))
+                                                    switch (splitLine[0])
+                                                    {
+                                                        case ClassRpcSettingEnumeration.SettingEnableBackupWalletSystem:
+                                                            if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
                                                             {
-                                                                if (rpcApiPort <= 0 || rpcApiPort >= 65535)
+                                                                WalletEnableBackupSystem = true;
+                                                            }
+                                                            else
+                                                            {
+                                                                WalletEnableBackupSystem = false;
+                                                            }
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingIntervalBackupWalletSystem:
+                                                            if (int.TryParse(splitLine[1], out var intervalBackupSystem))
+                                                            {
+                                                                WalletIntervalBackupSystem = intervalBackupSystem;
+                                                            }
+                                                            else
+                                                            {
+                                                                Console.WriteLine("Error on line: " + ClassRpcSettingEnumeration.SettingIntervalBackupWalletSystem + ", use default interval: " + WalletIntervalBackupSystem);
+                                                            }
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingEnableBackupWalletAutoRemoveSystem:
+                                                            if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
+                                                            {
+                                                                WalletEnableAutoRemoveBackupSystem = true;
+                                                            }
+                                                            else
+                                                            {
+                                                                WalletEnableAutoRemoveBackupSystem = false;
+                                                            }
+                                                            containUpdate = true;
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingWalletBackupLapsingTimeLimit:
+                                                            if (int.TryParse(splitLine[1], out var laspingTimeLimit))
+                                                            {
+                                                                WalletBackupLapsingTimeLimit = laspingTimeLimit;
+                                                            }
+                                                            else
+                                                            {
+                                                                Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines + " | Exception: " + splitLine[1] + ", use default lapsing timelimit: " + WalletBackupLapsingTimeLimit);
+                                                            }
+                                                            containUpdate = true;
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingApiIpBindSetting:
+                                                            if (IPAddress.TryParse(splitLine[1], out var ipAddress))
+                                                            {
+                                                                RpcWalletApiIpBind = splitLine[1];
+                                                            }
+                                                            else
+                                                            {
+                                                                Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines + " | Exception: " + splitLine[1] + " is not an IP.");
+                                                            }
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingApiPortSetting:
+                                                            if (splitLine.Length > 1)
+                                                            {
+                                                                if (int.TryParse(splitLine[1], out var rpcApiPort))
+                                                                {
+                                                                    if (rpcApiPort <= 0 || rpcApiPort >= 65535)
+                                                                    {
+                                                                        Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines + " | Exception: " + splitLine[1] + " is not a valid port number.");
+                                                                        Console.WriteLine("Use default port 8000");
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        RpcWalletApiPort = rpcApiPort;
+                                                                    }
+                                                                }
+                                                                else
                                                                 {
                                                                     Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines + " | Exception: " + splitLine[1] + " is not a valid port number.");
                                                                     Console.WriteLine("Use default port 8000");
                                                                 }
-                                                                else
-                                                                {
-                                                                    RpcWalletApiPort = rpcApiPort;
-                                                                }
                                                             }
                                                             else
                                                             {
-                                                                Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines + " | Exception: " + splitLine[1] + " is not a valid port number.");
-                                                                Console.WriteLine("Use default port 8000");
+                                                                Console.WriteLine("Error on line: " + ClassRpcSettingEnumeration.SettingApiPortSetting + ", use default port: " + RpcWalletApiPort);
                                                             }
-                                                        }
-                                                        else
-                                                        {
-                                                            Console.WriteLine("Error on line: " + ClassRpcSettingEnumeration.SettingApiPortSetting + ", use default port: " + RpcWalletApiPort);
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingApiWhitelist:
-                                                        if (splitLine.Length > 1)
-                                                        {
-                                                            if (splitLine[1].Contains(";"))
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingApiWhitelist:
+                                                            if (splitLine.Length > 1)
                                                             {
-                                                                var splitLineIp = splitLine[1].Split(new[] { ";" }, StringSplitOptions.None);
-                                                                foreach (var lineIp in splitLineIp)
+                                                                if (splitLine[1].Contains(";"))
                                                                 {
-                                                                    if (lineIp != null)
+                                                                    var splitLineIp = splitLine[1].Split(new[] { ";" }, StringSplitOptions.None);
+                                                                    foreach (var lineIp in splitLineIp)
                                                                     {
-                                                                        if (!string.IsNullOrEmpty(lineIp))
+                                                                        if (lineIp != null)
                                                                         {
-                                                                            if (lineIp.Length > 1)
+                                                                            if (!string.IsNullOrEmpty(lineIp))
                                                                             {
-                                                                                RpcWalletApiIpWhitelist.Add(lineIp);
+                                                                                if (lineIp.Length > 1)
+                                                                                {
+                                                                                    RpcWalletApiIpWhitelist.Add(lineIp);
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    if (splitLine[1] != null)
+                                                                    {
+                                                                        if (!string.IsNullOrEmpty(splitLine[1]))
+                                                                        {
+                                                                            if (splitLine[1].Length > 1)
+                                                                            {
+                                                                                RpcWalletApiIpWhitelist.Add(splitLine[1]);
                                                                             }
                                                                         }
                                                                     }
                                                                 }
                                                             }
-                                                            else
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingApiKeyRequestEncryption:
+                                                            if (splitLine.Length > 1)
                                                             {
-                                                                if (splitLine[1] != null)
+                                                                RpcWalletApiKeyRequestEncryption = splitLine[1];
+                                                                if (RpcWalletApiKeyRequestEncryption.Length < RpcApiKeyMinSize)
                                                                 {
-                                                                    if (!string.IsNullOrEmpty(splitLine[1]))
-                                                                    {
-                                                                        if (splitLine[1].Length > 1)
-                                                                        {
-                                                                            RpcWalletApiIpWhitelist.Add(splitLine[1]);
-                                                                        }
-                                                                    }
+                                                                    ClassConsole.ConsoleWriteLine("Warning the current API Key encryption length is less than " + RpcApiKeyMinSize + " characters required by the salt system of encryption !", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
                                                                 }
                                                             }
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingApiKeyRequestEncryption:
-                                                        if (splitLine.Length > 1)
-                                                        {
-                                                            RpcWalletApiKeyRequestEncryption = splitLine[1];
-                                                            if (RpcWalletApiKeyRequestEncryption.Length < RpcApiKeyMinSize)
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingEnableRemoteNodeSync:
+                                                            if (splitLine.Length > 1)
                                                             {
-                                                                ClassConsole.ConsoleWriteLine("Warning the current API Key encryption length is less than " + RpcApiKeyMinSize + " characters required by the salt system of encryption !", ClassConsoleColorEnumeration.IndexConsoleRedLog, Program.LogLevel);
+                                                                if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
+                                                                {
+                                                                    RpcWalletEnableRemoteNodeSync = true;
+                                                                }
                                                             }
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingEnableRemoteNodeSync:
-                                                        if (splitLine.Length > 1)
-                                                        {
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingRemoteNodeHost:
+                                                            if (splitLine.Length > 1)
+                                                            {
+                                                                RpcWalletRemoteNodeHost = splitLine[1];
+                                                            }
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingRemoteNodePort:
+                                                            if (splitLine.Length > 1)
+                                                            {
+                                                                RpcWalletRemoteNodePort = int.Parse(splitLine[1]);
+                                                            }
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingWalletUpdateInterval:
+                                                            if (int.TryParse(splitLine[1], out var walletUpdateInterval))
+                                                            {
+                                                                WalletUpdateInterval = walletUpdateInterval;
+                                                            }
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingWalletEnableAutoUpdate:
                                                             if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
                                                             {
-                                                                RpcWalletEnableRemoteNodeSync = true;
+                                                                ClassConsole.ConsoleWriteLine("Warning auto update is enabled, be sure to select a good interval time of update for don't be detected has flooding on seed nodes.", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                                                                WalletEnableAutoUpdateWallet = true;
                                                             }
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingRemoteNodeHost:
-                                                        if (splitLine.Length > 1)
-                                                        {
-                                                            RpcWalletRemoteNodeHost = splitLine[1];
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingRemoteNodePort:
-                                                        if (splitLine.Length > 1)
-                                                        {
-                                                            RpcWalletRemoteNodePort = int.Parse(splitLine[1]);
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingWalletUpdateInterval:
-                                                        if (int.TryParse(splitLine[1], out var walletUpdateInterval))
-                                                        {
-                                                            WalletUpdateInterval = walletUpdateInterval;
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingWalletEnableAutoUpdate:
-                                                        if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
-                                                        {
-                                                            ClassConsole.ConsoleWriteLine("Warning auto update is enabled, be sure to select a good interval time of update for don't be detected has flooding on seed nodes.", ClassConsoleColorEnumeration.IndexConsoleRedLog);
-                                                            WalletEnableAutoUpdateWallet = true;
-                                                        }
-                                                        else
-                                                        {
+                                                            else
+                                                            {
 
-                                                            ClassConsole.ConsoleWriteLine("Warning auto update system is disabled, be sure to use your API to update manually wallets informations.", ClassConsoleColorEnumeration.IndexConsoleRedLog);
-                                                            WalletEnableAutoUpdateWallet = false;
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingWalletMaxKeepAliveUpdate:
-                                                        if (int.TryParse(splitLine[1], out var walletMaxKeepAliveUpdate))
-                                                        {
-                                                            WalletMaxKeepAliveUpdate = walletMaxKeepAliveUpdate;
-                                                        }
-                                                        break;
-                                                    case ClassRpcSettingEnumeration.SettingApiEnableXForwardedForResolver:
-                                                        if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
-                                                        {
-                                                            RpcWalletApiEnableXForwardedForResolver = true;
-                                                        }
-                                                        break;
-                                                    default:
-                                                        if (splitLine.Length > 1)
-                                                        {
-                                                            Console.WriteLine("Unknown config line: " + splitLine[0] + " with argument: " + splitLine[1] + " on line: " + numberOfLines);
-                                                        }
-                                                        else
-                                                        {
-                                                            Console.WriteLine("Unknown config line: " + splitLine[0] + " with no argument on line: " + numberOfLines);
-                                                        }
-                                                        break;
+                                                                ClassConsole.ConsoleWriteLine("Warning auto update system is disabled, be sure to use your API to update manually wallets informations.", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                                                                WalletEnableAutoUpdateWallet = false;
+                                                            }
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingWalletMaxKeepAliveUpdate:
+                                                            if (int.TryParse(splitLine[1], out var walletMaxKeepAliveUpdate))
+                                                            {
+                                                                WalletMaxKeepAliveUpdate = walletMaxKeepAliveUpdate;
+                                                            }
+                                                            break;
+                                                        case ClassRpcSettingEnumeration.SettingApiEnableXForwardedForResolver:
+                                                            if (splitLine[1].ToLower() == "y" || splitLine[1].ToLower() == "true")
+                                                            {
+                                                                RpcWalletApiEnableXForwardedForResolver = true;
+                                                            }
+                                                            break;
+                                                        default:
+                                                            if (splitLine.Length > 1)
+                                                            {
+                                                                Console.WriteLine("Unknown config line: " + splitLine[0] + " with argument: " + splitLine[1] + " on line: " + numberOfLines);
+                                                            }
+                                                            else
+                                                            {
+                                                                Console.WriteLine("Unknown config line: " + splitLine[0] + " with no argument on line: " + numberOfLines);
+                                                            }
+                                                            break;
+                                                    }
+                                                }
+                                                catch
+                                                {
+                                                    Console.WriteLine("Error on line:" + numberOfLines);
                                                 }
                                             }
-                                            catch
+                                            else
                                             {
-                                                Console.WriteLine("Error on line:" + numberOfLines);
+                                                Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines);
                                             }
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine("Error on config line: " + splitLine[0] + " on line:" + numberOfLines);
                                         }
                                     }
                                 }
                             }
                         }
+                        if (!containUpdate)
+                        {
+                            ClassConsole.ConsoleWriteLine("Setting system of RPC Wallet has been updated, create a new setting file now: ", ClassConsoleColorEnumeration.IndexConsoleMagentaLog);
+                            File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)).Close();
+                            MakeRpcWalletSetting();
+                        }
+                        else
+                        {
+                            SaveRpcWalletSetting();
+                            File.Delete(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingOldFile));
+                        }
                     }
-                    if (!containUpdate)
+                    else
                     {
-                        ClassConsole.ConsoleWriteLine("Setting system of RPC Wallet has been updated, create a new setting file now: ", ClassConsoleColorEnumeration.IndexConsoleMagentaLog);
                         File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)).Close();
                         MakeRpcWalletSetting();
                     }
-                }
-                else
-                {
-                    File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)).Close();
-                    MakeRpcWalletSetting();
                 }
             }
             catch
@@ -429,114 +567,97 @@ namespace Xiropht_Rpc_Wallet.Setting
                 }
             }
 
-            using (var settingWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile), true, Encoding.UTF8, 8192) { AutoFlush = true })
-            {
-                settingWriter.WriteLine("// RPC Wallet IP Bind.");
-                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiIpBindSetting + "=" + RpcWalletApiIpBind);
 
-                settingWriter.WriteLine("// RPC Wallet API port.");
-                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiPortSetting + "=" + RpcWalletApiPort);
-                settingWriter.WriteLine("// List of IP whitelisted on the API Server, if the list is empty everyone can try to access on the port. use ; between each ip/hostname address");
-                string host = ClassRpcSettingEnumeration.SettingApiWhitelist + "=";
-                if (RpcWalletApiIpWhitelist.Count > 0)
+            string host = ClassRpcSettingEnumeration.SettingApiWhitelist + "=";
+            if (RpcWalletApiIpWhitelist.Count > 0)
+            {
+                for (int i = 0; i < RpcWalletApiIpWhitelist.Count; i++)
                 {
-                    for (int i = 0; i < RpcWalletApiIpWhitelist.Count; i++)
+                    if (i < RpcWalletApiIpWhitelist.Count)
                     {
-                        if (i < RpcWalletApiIpWhitelist.Count)
+                        if (i < RpcWalletApiIpWhitelist.Count - 1)
                         {
-                            if (i < RpcWalletApiIpWhitelist.Count - 1)
-                            {
-                                host += RpcWalletApiIpWhitelist[i] + ";";
-                            }
-                            else
-                            {
-                                host += RpcWalletApiIpWhitelist[i];
-                            }
+                            host += RpcWalletApiIpWhitelist[i] + ";";
+                        }
+                        else
+                        {
+                            host += RpcWalletApiIpWhitelist[i];
                         }
                     }
                 }
-                settingWriter.WriteLine(host);
-                settingWriter.WriteLine("// The key for encrypt request to receive/sent on the API. (" + RpcApiKeyMinSize + " characters minimum required by the salt encryption system.)");
-                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiKeyRequestEncryption + "=" + RpcWalletApiKeyRequestEncryption);
-                settingWriter.WriteLine("// The X-FORWARDED-FOR resolver, permit to resolve the IP from an incomming connection, this option should be used only if the API is behind a proxy.");
-                if (RpcWalletApiEnableXForwardedForResolver)
-                {
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiEnableXForwardedForResolver + "=Y");
-                }
-                else
-                {
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingApiEnableXForwardedForResolver + "=N");
-                }
-                settingWriter.WriteLine("// Enable remote node sync");
-                if (RpcWalletEnableRemoteNodeSync)
-                {
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingEnableRemoteNodeSync + "=Y");
-                }
-                else
-                {
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingEnableRemoteNodeSync + "=N");
-                }
-                settingWriter.WriteLine("//Remote Node Host address");
-                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingRemoteNodeHost + "=" + RpcWalletRemoteNodeHost);
-                settingWriter.WriteLine("// Remote Node Port");
-                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingRemoteNodePort + "=" + RpcWalletRemoteNodePort);
+            }
 
 
-                ClassConsole.ConsoleWriteLine("Do you want to enable the auto update system? (By default this function is enabled and recommended) [Y/N]: ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
-                yourChoose = Console.ReadLine().ToLower() == "y";
-                if (yourChoose)
-                {
-                    WalletEnableAutoUpdateWallet = true;
-                    settingWriter.WriteLine("//Enable auto update of wallets informations.");
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletEnableAutoUpdate + "=Y");
-                    settingWriter.WriteLine("// Interval of time in second(s) between whole updates of wallets informations.");
-                    ClassConsole.ConsoleWriteLine("Write the interval of time in second(s) to update wallets informations. (By default " + WalletUpdateInterval + "): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
-                    int interval = WalletUpdateInterval;
-                    while (!int.TryParse(Console.ReadLine(), out interval))
-                    {
-                        ClassConsole.ConsoleWriteLine("Write a valid interval of time in second(s) to update wallets informations. (By default " + WalletUpdateInterval + "): ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
-                    }
-                    WalletUpdateInterval = interval;
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletUpdateInterval + "=" + WalletUpdateInterval);
 
-                    ClassConsole.ConsoleWriteLine("Write the max keep alive update wallet of time in second(s). (By default " + WalletMaxKeepAliveUpdate + "): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
-                    interval = WalletMaxKeepAliveUpdate;
-                    while (!int.TryParse(Console.ReadLine(), out interval))
-                    {
-                        ClassConsole.ConsoleWriteLine("Write a max keep alive update wallet of time in second(s). (By default " + WalletMaxKeepAliveUpdate + "): ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
-                    }
-                    WalletMaxKeepAliveUpdate = interval;
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletMaxKeepAliveUpdate + "=" + WalletMaxKeepAliveUpdate);
+            ClassConsole.ConsoleWriteLine("Do you want to enable the auto update system? (By default this function is enabled and recommended) [Y/N]: ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+            yourChoose = Console.ReadLine().ToLower() == "y";
+            if (yourChoose)
+            {
+                WalletEnableAutoUpdateWallet = true;
+                ClassConsole.ConsoleWriteLine("Write the interval of time in second(s) to update wallets informations. (By default " + WalletUpdateInterval + "): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+                int interval = WalletUpdateInterval;
+                while (!int.TryParse(Console.ReadLine(), out interval))
+                {
+                    ClassConsole.ConsoleWriteLine("Write a valid interval of time in second(s) to update wallets informations. (By default " + WalletUpdateInterval + "): ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
+                }
+                WalletUpdateInterval = interval;
 
-                }
-                else
+                ClassConsole.ConsoleWriteLine("Write the max keep alive update wallet of time in second(s). (By default " + WalletMaxKeepAliveUpdate + "): ", ClassConsoleColorEnumeration.IndexConsoleBlueLog);
+                interval = WalletMaxKeepAliveUpdate;
+                while (!int.TryParse(Console.ReadLine(), out interval))
                 {
-                    WalletEnableAutoUpdateWallet = false;
-                    settingWriter.WriteLine("//Enable auto update of wallets informations.");
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletEnableAutoUpdate + "=N");
-                    settingWriter.WriteLine("// Interval of time in second(s) between whole updates of wallets informations.");
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletUpdateInterval + "=" + WalletUpdateInterval);
+                    ClassConsole.ConsoleWriteLine("Write a max keep alive update wallet of time in second(s). (By default " + WalletMaxKeepAliveUpdate + "): ", ClassConsoleColorEnumeration.IndexConsoleRedLog);
                 }
+                WalletMaxKeepAliveUpdate = interval;
+            }
+            else
+            {
+                WalletEnableAutoUpdateWallet = false;
+            }
+            SaveRpcWalletSetting();
+        }
 
-                settingWriter.WriteLine("// About backup system of wallet database.");
-                if (WalletEnableBackupSystem)
-                {
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingEnableBackupWalletSystem + "=Y");
-                }
-                else
-                {
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingEnableBackupWalletSystem + "=N");
-                }
-                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingIntervalBackupWalletSystem + "=" + WalletIntervalBackupSystem);
-                if (WalletEnableAutoRemoveBackupSystem)
-                {
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingEnableBackupWalletAutoRemoveSystem + "=Y");
-                }
-                else
-                {
-                    settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingEnableBackupWalletAutoRemoveSystem + "=N");
-                }
-                settingWriter.WriteLine(ClassRpcSettingEnumeration.SettingWalletBackupLapsingTimeLimit + "=" + WalletBackupLapsingTimeLimit);
+        /// <summary>
+        /// Save setting of RPC Wallet
+        /// </summary>
+        private static void SaveRpcWalletSetting()
+        {
+            var jsonRpcWalletSettingObject = new ClassRpcSettingObject
+            {
+                wallet_enable_backup_system = WalletEnableBackupSystem,
+                wallet_interval_backup_system = WalletIntervalBackupSystem,
+                wallet_enable_auto_remove_backup_system = WalletEnableAutoRemoveBackupSystem,
+                wallet_backup_lapsing_time_limit = WalletBackupLapsingTimeLimit,
+                rpc_wallet_api_port = RpcWalletApiPort,
+                rpc_wallet_api_ip_whitelist = RpcWalletApiIpWhitelist,
+                rpc_wallet_key_request_encryption = RpcWalletApiKeyRequestEncryption,
+                rpc_wallet_enable_remote_node_sync = RpcWalletEnableRemoteNodeSync,
+                rpc_wallet_remote_node_host = RpcWalletRemoteNodeHost,
+                rpc_wallet_remote_node_port = RpcWalletRemoteNodePort,
+                wallet_enable_auto_update = WalletEnableAutoUpdateWallet,
+                wallet_update_interval = WalletUpdateInterval,
+                wallet_max_keep_alive_update = WalletMaxKeepAliveUpdate,
+                rpc_wallet_api_enable_x_forwarded_for_resolver = RpcWalletApiEnableXForwardedForResolver,
+                wallet_enable_auto_clean_log = WalletEnableAutoCleanLog,
+                wallet_auto_clean_log_interval = WalletAutoCleanLogInterval
+            };
+            if (IPAddress.TryParse(RpcWalletApiIpBind, out var ipAddress))
+            {
+                jsonRpcWalletSettingObject.rpc_wallet_api_ip_bind = RpcWalletApiIpBind;
+            }
+            else
+            {
+                Console.WriteLine("Error on configuration, Exception: " + RpcWalletApiIpBind + " is not an IP.");
+                jsonRpcWalletSettingObject.rpc_wallet_api_ip_bind = string.Empty;
+            }
+            if (RpcWalletApiIpWhitelist == null)
+            {
+                RpcWalletApiIpWhitelist = new List<string>();
+            }
+
+            using (var writer = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)){ AutoFlush = true })
+            {
+                writer.Write(JsonConvert.SerializeObject(jsonRpcWalletSettingObject, Formatting.Indented));
             }
         }
     }

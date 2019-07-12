@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xiropht_Rpc_Wallet.ConsoleObject;
+using Xiropht_Rpc_Wallet.Setting;
 using Xiropht_Rpc_Wallet.Utility;
 
 namespace Xiropht_Rpc_Wallet.Log
@@ -54,6 +55,7 @@ namespace Xiropht_Rpc_Wallet.Log
         /// </summary>
         private const int WriteLogBufferSize = 8192;
         private static Thread ThreadAutoWriteLog;
+        private static long LastCleanLogDate;
 
         /// <summary>
         /// Log Initialization.
@@ -143,6 +145,28 @@ namespace Xiropht_Rpc_Wallet.Log
         }
 
         /// <summary>
+        /// Clean up logs.
+        /// </summary>
+        private static void LogCleanUp()
+        {
+            LogApiStreamWriter?.Close();
+            LogGeneralStreamWriter?.Close();
+            LogWalletUpdaterStreamWriter?.Close();
+            LogSyncStreamWriter?.Close();
+            LogRemoteNodeSyncStreamWriter?.Close();
+            File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogGeneral)).Close();
+            File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater)).Close();
+            File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogApi)).Close();
+            File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogSync)).Close();
+            File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync)).Close();
+            LogGeneralStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogGeneral), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            LogWalletUpdaterStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            LogApiStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogApi), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            LogSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            LogRemoteNodeSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+        }
+
+        /// <summary>
         /// Insert logs inside the list of logs to write.
         /// </summary>
         /// <param name="text"></param>
@@ -175,6 +199,16 @@ namespace Xiropht_Rpc_Wallet.Log
                 {
                     try
                     {
+                        if (ClassRpcSetting.WalletEnableAutoCleanLog)
+                        {
+                            if (LastCleanLogDate + ClassRpcSetting.WalletAutoCleanLogInterval < DateTimeOffset.Now.ToUnixTimeSeconds())
+                            {
+                                LastCleanLogDate = DateTimeOffset.Now.ToUnixTimeSeconds();
+                                ClassConsole.ConsoleWriteLine("AutoClean Logs started..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
+                                LogCleanUp();
+                                ClassConsole.ConsoleWriteLine("AutoClean Logs done.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
+                            }
+                        }
                         if (ListOfLog.Count > 0)
                         {
                             if (ListOfLog.Count >= 100)
