@@ -42,8 +42,8 @@ http://127.0.0.1:8000/create_wallet
 | `/get_wallet_anonymous_transaction\|wallet_address\|index` | Return an anonymous transaction selected by wallet address and an index.| 
 | `/get_whole_wallet_transaction_by_range\|start\|end` | Return every transactions sync from a range selected.|
 | `/send_transaction_by_wallet_address\|wallet_address_source\|amount\|fee\|anonymous_option(0 or 1)\|wallet_address_target` | Send a transaction by a selected wallet address source, with a selected amount and fee, by anonymous option or not to a target wallet address.| 
-| `/update_wallet_by_address\|wallet_address` | Update manually informations current balance, pending balance of the wallet address target.|
-| `/update_wallet_by_index\|wallet_index` | Update manually informations current balance, pending balance of the wallet index target.|
+| `/update_wallet_by_address\|wallet_address` | Send a request to the network for update current balance and pending balance of a wallet target instead to use the autoupdate system of the RPC Wallet program. |
+| `/update_wallet_by_index\|wallet_index` | Send a request to the network for update current balance and pending balance of a wallet target instead to use the autoupdate system of the RPC Wallet program. |
 | `/send_transfer_by_wallet_address\|wallet_address_source\|amount\|wallet_address_target` | Send a transfer by a selected wallet address source, with a selected amount, to a target wallet address (of course it's functionnal for wallets stored inside RPC Wallet who contain their key's).| 
 
 ----------------------------------------------------------------------------------------
