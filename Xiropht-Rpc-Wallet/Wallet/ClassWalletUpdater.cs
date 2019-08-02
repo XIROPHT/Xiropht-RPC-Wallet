@@ -52,8 +52,8 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         {
                             foreach (var seedNode in ClassConnectorSetting.SeedNodeIp.ToArray())
                             {
-                                getSeedNodeRandom = "74.121.191.114";
-                                Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync("74.121.191.114", ClassConnectorSetting.SeedNodeTokenPort));
+                                getSeedNodeRandom = seedNode.Key;
+                                Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(seedNode.Key, ClassConnectorSetting.SeedNodeTokenPort));
                                 taskCheckSeedNode.Wait(ClassConnectorSetting.MaxTimeoutConnect);
                                 if (seedNodeSelected)
                                 {
@@ -173,7 +173,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
             foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
             {
                 getSeedNodeRandom = seedNode.Key;
-                Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync("74.121.191.114", ClassConnectorSetting.SeedNodeTokenPort));
+                Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(seedNode.Key, ClassConnectorSetting.SeedNodeTokenPort));
                 taskCheckSeedNode.Wait(ClassConnectorSetting.MaxTimeoutConnect);
                 if (seedNodeSelected)
                 {
@@ -574,7 +574,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
                     {
                         getSeedNodeRandom = seedNode.Key;
-                        Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync("74.121.191.114", ClassConnectorSetting.SeedNodeTokenPort));
+                        Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(seedNode.Key, ClassConnectorSetting.SeedNodeTokenPort));
                         taskCheckSeedNode.Wait(ClassConnectorSetting.MaxTimeoutConnect);
                         if (seedNodeSelected)
                         {
