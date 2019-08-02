@@ -616,6 +616,26 @@ namespace Xiropht_Rpc_Wallet.API
                                         }
                                         if (ListOfTransactionPerRange.Count > 0)
                                         {
+                                            Dictionary<ClassApiJsonTransaction, long> ListOfTransactionSorted = new Dictionary<ClassApiJsonTransaction, long>();
+
+                                            foreach(var objectTransaction in ListOfTransactionPerRange)
+                                            {
+                                                ListOfTransactionSorted.Add(objectTransaction.Value, objectTransaction.Value.timestamp_recv);
+                                            }
+
+                                            ListOfTransactionPerRange.Clear();
+
+                                            long index = 1;
+                                            foreach (KeyValuePair<ClassApiJsonTransaction, long> objectTransactionSorted in ListOfTransactionSorted.OrderBy(value => value.Value))
+                                            {
+                                                objectTransactionSorted.Key.index = index;
+                                                index++;
+                                                if (!ListOfTransactionPerRange.ContainsKey(objectTransactionSorted.Key.hash))
+                                                {
+                                                    ListOfTransactionPerRange.Add(objectTransactionSorted.Key.hash, objectTransactionSorted.Key);
+                                                }
+                                            }
+
                                             string data = JsonConvert.SerializeObject(ListOfTransactionPerRange.Values.ToArray());
 
                                             StringBuilder builder = new StringBuilder();
