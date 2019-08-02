@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -21,6 +22,8 @@ namespace Xiropht_Rpc_Wallet.Database
         private static StreamWriter SyncDatabaseStreamWriter;
         public static bool InSave;
         private static long TotalTransactionRead;
+
+        public static Dictionary<string, long> DatabaseTransactionSync = new Dictionary<string, long>();
 
         /// <summary>
         /// Initialize sync database.
@@ -55,6 +58,8 @@ namespace Xiropht_Rpc_Wallet.Database
                                         if (ClassRpcDatabase.RpcDatabaseContent.ContainsKey(walletAddress))
                                         {
                                             string transaction = ClassAlgo.GetDecryptedResultManual(ClassAlgoEnumeration.Rijndael, splitTransactionLine[1], walletAddress + ClassRpcDatabase.RpcDatabaseContent[walletAddress].GetWalletPublicKey(), ClassWalletNetworkSetting.KeySize);
+                                            transaction += "#" + walletAddress;
+
                                             var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
                                             if (splitTransaction[0] == "anonymous")
                                             {
@@ -63,6 +68,10 @@ namespace Xiropht_Rpc_Wallet.Database
                                             else
                                             {
                                                 ClassRpcDatabase.RpcDatabaseContent[walletAddress].InsertWalletTransactionSync(transaction, false, false);
+                                            }
+                                            if (!DatabaseTransactionSync.ContainsKey(transaction))
+                                            {
+                                                DatabaseTransactionSync.Add(transaction, long.Parse(splitTransaction[7]));
                                             }
                                             TotalTransactionRead++;
                                         }
@@ -97,6 +106,12 @@ namespace Xiropht_Rpc_Wallet.Database
                 {
                     try
                     {
+                        string transactionTmp = transaction + "#" + walletAddress;
+                        var splitTransaction = transactionTmp.Split(new[] { "#" }, StringSplitOptions.None);
+                        if (!DatabaseTransactionSync.ContainsKey(transactionTmp))
+                        {
+                            DatabaseTransactionSync.Add(transactionTmp, long.Parse(splitTransaction[7]));
+                        }
                         transaction = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, transaction, walletAddress + walletPublicKey, ClassWalletNetworkSetting.KeySize);
                         string transactionLine = ClassSyncDatabaseEnumeration.DatabaseSyncStartLine + walletAddress + "|" + transaction;
                         SyncDatabaseStreamWriter.WriteLine(transactionLine);

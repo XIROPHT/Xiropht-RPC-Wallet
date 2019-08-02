@@ -524,117 +524,53 @@ namespace Xiropht_Rpc_Wallet.API
                                 {
                                     if (ClassRpcDatabase.RpcDatabaseContent.Count > 0)
                                     {
-                                        long totalTransactionTravel = 0;
                                         long totalTransactionIndex = 0;
+                                        long totalTransactionTravel = 0;
+
                                         Dictionary<string, ClassApiJsonTransaction> ListOfTransactionPerRange = new Dictionary<string, ClassApiJsonTransaction>();
-                                        foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent.ToArray())
+                                        foreach (var walletObject in ClassSyncDatabase.DatabaseTransactionSync.ToArray().OrderBy(value => value.Value))
                                         {
 
-                                            if (totalTransactionTravel <= endIndex)
-                                            {
-                                                if (ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalTransactionSync() > 0)
-                                                {
-
-                                                    for (int i = 0; i < ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalTransactionSync(); i++)
-                                                    {
-                                                        totalTransactionTravel++;
-                                                        totalTransactionIndex++;
-                                                        if (totalTransactionTravel >= startIndex && totalTransactionTravel <= endIndex)
-                                                        {
-                                                            string transaction = ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTransactionSyncByIndex(i);
-                                                            if (transaction != null)
-                                                            {
-
-                                                                var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
-                                                                if (!ListOfTransactionPerRange.ContainsKey(splitTransaction[2] + walletObject.Key))
-                                                                {
-
-                                                                    var transactionJsonObject = new ClassApiJsonTransaction()
-                                                                    {
-                                                                        index = totalTransactionIndex,
-                                                                        wallet_address = walletObject.Key,
-                                                                        mode = splitTransaction[0],
-                                                                        type = splitTransaction[1],
-                                                                        hash = splitTransaction[2],
-                                                                        wallet_dst_or_src = splitTransaction[3],
-                                                                        amount = decimal.Parse(splitTransaction[4], NumberStyles.Currency, Program.GlobalCultureInfo),
-                                                                        fee = decimal.Parse(splitTransaction[5], NumberStyles.Currency, Program.GlobalCultureInfo),
-                                                                        timestamp_send = long.Parse(splitTransaction[6]),
-                                                                        timestamp_recv = long.Parse(splitTransaction[7]),
-                                                                        blockchain_height = splitTransaction[8]
-                                                                    };
-
-
-                                                                    ListOfTransactionPerRange.Add(splitTransaction[2] + walletObject.Key, transactionJsonObject);
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
+                                            totalTransactionIndex++;
 
                                             if (totalTransactionTravel <= endIndex)
                                             {
-                                                if (ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalAnonymousTransactionSync() > 0)
+                                                totalTransactionTravel++;
+                                                if (totalTransactionTravel >= startIndex && totalTransactionTravel <= endIndex)
                                                 {
-                                                    for (int i = 0; i < ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalAnonymousTransactionSync(); i++)
+                                                    string transaction = walletObject.Key;
+                                                    Console.WriteLine(transaction);
+                                                    if (transaction != null)
                                                     {
-                                                        totalTransactionTravel++;
-                                                        totalTransactionIndex++;
-                                                        if (totalTransactionTravel >= startIndex && totalTransactionTravel <= endIndex)
+
+                                                        var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
+                                                        if (!ListOfTransactionPerRange.ContainsKey(splitTransaction[2] + splitTransaction[9]))
                                                         {
-                                                            string transaction = ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletAnonymousTransactionSyncByIndex(i);
-                                                            if (transaction != null)
+
+                                                            var transactionJsonObject = new ClassApiJsonTransaction()
                                                             {
-                                                                var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
-                                                                if (!ListOfTransactionPerRange.ContainsKey(splitTransaction[2] + walletObject.Key))
-                                                                {
+                                                                index = totalTransactionIndex,
+                                                                wallet_address = splitTransaction[9],
+                                                                mode = splitTransaction[0],
+                                                                type = splitTransaction[1],
+                                                                hash = splitTransaction[2],
+                                                                wallet_dst_or_src = splitTransaction[3],
+                                                                amount = decimal.Parse(splitTransaction[4], NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                                fee = decimal.Parse(splitTransaction[5], NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                                timestamp_send = long.Parse(splitTransaction[6]),
+                                                                timestamp_recv = long.Parse(splitTransaction[7]),
+                                                                blockchain_height = splitTransaction[8]
+                                                            };
 
-                                                                    var transactionJsonObject = new ClassApiJsonTransaction()
-                                                                    {
-                                                                        index = totalTransactionIndex,
-                                                                        wallet_address = walletObject.Key,
-                                                                        mode = splitTransaction[0],
-                                                                        type = splitTransaction[1],
-                                                                        hash = splitTransaction[2],
-                                                                        wallet_dst_or_src = splitTransaction[3],
-                                                                        amount = decimal.Parse(splitTransaction[4], NumberStyles.Currency, Program.GlobalCultureInfo),
-                                                                        fee = decimal.Parse(splitTransaction[5], NumberStyles.Currency, Program.GlobalCultureInfo),
-                                                                        timestamp_send = long.Parse(splitTransaction[6]),
-                                                                        timestamp_recv = long.Parse(splitTransaction[7]),
-                                                                        blockchain_height = splitTransaction[8]
-                                                                    };
-
-
-                                                                    ListOfTransactionPerRange.Add(splitTransaction[2] + walletObject.Key, transactionJsonObject);
-                                                                }
-                                                            }
+                                                            ListOfTransactionPerRange.Add(splitTransaction[2] + splitTransaction[9], transactionJsonObject);
                                                         }
                                                     }
                                                 }
                                             }
                                         }
+                                        
                                         if (ListOfTransactionPerRange.Count > 0)
                                         {
-                                            Dictionary<ClassApiJsonTransaction, long> ListOfTransactionSorted = new Dictionary<ClassApiJsonTransaction, long>();
-
-                                            foreach(var objectTransaction in ListOfTransactionPerRange)
-                                            {
-                                                ListOfTransactionSorted.Add(objectTransaction.Value, objectTransaction.Value.timestamp_recv);
-                                            }
-
-                                            ListOfTransactionPerRange.Clear();
-
-                                            long index = 1;
-                                            foreach (KeyValuePair<ClassApiJsonTransaction, long> objectTransactionSorted in ListOfTransactionSorted.OrderBy(value => value.Value))
-                                            {
-                                                objectTransactionSorted.Key.index = index;
-                                                index++;
-                                                if (!ListOfTransactionPerRange.ContainsKey(objectTransactionSorted.Key.hash))
-                                                {
-                                                    ListOfTransactionPerRange.Add(objectTransactionSorted.Key.hash, objectTransactionSorted.Key);
-                                                }
-                                            }
 
                                             string data = JsonConvert.SerializeObject(ListOfTransactionPerRange.Values.ToArray());
 
