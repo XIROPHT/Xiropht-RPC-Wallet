@@ -525,6 +525,7 @@ namespace Xiropht_Rpc_Wallet.API
                                     if (ClassRpcDatabase.RpcDatabaseContent.Count > 0)
                                     {
                                         long totalTransactionTravel = 0;
+                                        long totalTransactionIndex = 0;
                                         Dictionary<string, ClassApiJsonTransaction> ListOfTransactionPerRange = new Dictionary<string, ClassApiJsonTransaction>();
                                         foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent.ToArray())
                                         {
@@ -537,6 +538,7 @@ namespace Xiropht_Rpc_Wallet.API
                                                     for (int i = 0; i < ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalTransactionSync(); i++)
                                                     {
                                                         totalTransactionTravel++;
+                                                        totalTransactionIndex++;
                                                         if (totalTransactionTravel >= startIndex && totalTransactionTravel <= endIndex)
                                                         {
                                                             string transaction = ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTransactionSyncByIndex(i);
@@ -549,7 +551,7 @@ namespace Xiropht_Rpc_Wallet.API
 
                                                                     var transactionJsonObject = new ClassApiJsonTransaction()
                                                                     {
-                                                                        index = (i + 1),
+                                                                        index = totalTransactionIndex,
                                                                         wallet_address = walletObject.Key,
                                                                         mode = splitTransaction[0],
                                                                         type = splitTransaction[1],
@@ -578,7 +580,7 @@ namespace Xiropht_Rpc_Wallet.API
                                                     for (int i = 0; i < ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalAnonymousTransactionSync(); i++)
                                                     {
                                                         totalTransactionTravel++;
-
+                                                        totalTransactionIndex++;
                                                         if (totalTransactionTravel >= startIndex && totalTransactionTravel <= endIndex)
                                                         {
                                                             string transaction = ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletAnonymousTransactionSyncByIndex(i);
@@ -588,11 +590,9 @@ namespace Xiropht_Rpc_Wallet.API
                                                                 if (!ListOfTransactionPerRange.ContainsKey(splitTransaction[2] + walletObject.Key))
                                                                 {
 
-
-
                                                                     var transactionJsonObject = new ClassApiJsonTransaction()
                                                                     {
-                                                                        index = (i + 1),
+                                                                        index = totalTransactionIndex,
                                                                         wallet_address = walletObject.Key,
                                                                         mode = splitTransaction[0],
                                                                         type = splitTransaction[1],
