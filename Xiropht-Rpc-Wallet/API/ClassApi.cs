@@ -25,6 +25,7 @@ namespace Xiropht_Rpc_Wallet.API
     public class ClassApiEnumeration
     {
         public const string GetTotalWalletIndex = "get_total_wallet_index"; // Number of total wallet created.
+        public const string GetTotalWalletTransactionSync = "get_total_transaction_sync"; // Return the total amount of transaction(s) sync.
         public const string GetWalletAddressByIndex = "get_wallet_address_by_index"; // Get a wallet address by an index selected.
         public const string GetWalletBalanceByIndex = "get_wallet_balance_by_index"; // Get a wallet balance and pending balance by an index selected.
         public const string GetWalletBalanceByWalletAddress = "get_wallet_balance_by_wallet_address"; // Get a wallet balance and pending balance by an wallet address selected.
@@ -1122,15 +1123,39 @@ namespace Xiropht_Rpc_Wallet.API
                 {
                     switch (packet)
                     {
+                        case ClassApiEnumeration.GetTotalWalletTransactionSync:
+
+                            long totalTransactionSync = 0;
+                            foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent.ToArray())
+                            {
+                                totalTransactionSync += walletObject.Value.GetWalletTotalTransactionSync() + walletObject.Value.GetWalletTotalAnonymousTransactionSync();
+                            }
+                            var totalTransactionSyncObject = new ClassApiJsonTotalTransactionSync()
+                            {
+                                result = totalTransactionSync
+                            };
+
+                            string data = JsonConvert.SerializeObject(totalTransactionSyncObject);
+
+                            StringBuilder builder = new StringBuilder();
+                            builder.AppendLine(@"HTTP/1.1 200 OK");
+                            builder.AppendLine(@"Content-Type: text/plain");
+                            builder.AppendLine(@"Content-Length: " + data.Length);
+                            builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                            builder.AppendLine(@"");
+                            builder.AppendLine(@"" + data);
+                            await SendPacketAsync(builder.ToString());
+                            builder.Clear();
+                            break;
                         case ClassApiEnumeration.GetTotalWalletIndex:
 
                             var totalWalletObject = new ClassApiJsonTotalWalletCount()
                             {
                                 result = ClassRpcDatabase.RpcDatabaseContent.Count
                             };
-                            string data = JsonConvert.SerializeObject(totalWalletObject);
+                            data = JsonConvert.SerializeObject(totalWalletObject);
 
-                            StringBuilder builder = new StringBuilder();
+                            builder = new StringBuilder();
                             builder.AppendLine(@"HTTP/1.1 200 OK");
                             builder.AppendLine(@"Content-Type: text/plain");
                             builder.AppendLine(@"Content-Length: " + data.Length);

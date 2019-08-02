@@ -63,4 +63,9 @@
     {
         public long result;
     }
+
+    public class ClassApiJsonTotalTransactionSync
+    {
+        public long result;
+    }
 }
