@@ -44,7 +44,9 @@ http://127.0.0.1:8000/create_wallet
 | `/send_transaction_by_wallet_address\|wallet_address_source\|amount\|fee\|anonymous_option(0 or 1)\|wallet_address_target` | Send a transaction by a selected wallet address source, with a selected amount and fee, by anonymous option or not to a target wallet address.| 
 | `/update_wallet_by_address\|wallet_address` | Send a request to the network for update current balance and pending balance of a wallet target instead to use the autoupdate system of the RPC Wallet program. |
 | `/update_wallet_by_index\|wallet_index` | Send a request to the network for update current balance and pending balance of a wallet target instead to use the autoupdate system of the RPC Wallet program. |
-| `/send_transfer_by_wallet_address\|wallet_address_source\|amount\|wallet_address_target` | Send a transfer by a selected wallet address source, with a selected amount, to a target wallet address (of course it's functionnal for wallets stored inside RPC Wallet who contain their key's).| 
+| `/send_transfer_by_wallet_address\|wallet_address_source\|amount\|wallet_address_target` | Send a transfer by a selected wallet address source, with a selected amount, to a target wallet address (of course it's functionnal for wallets stored inside RPC Wallet who contain their key's).|
+| `/get_total_transaction_sync` | Return the total amount of transaction(s) synced stored inside the RPC Wallet. |
+ 
 
 ----------------------------------------------------------------------------------------
 
@@ -307,6 +309,18 @@ Return the status of the transfer, his transaction hash and the current balance 
 -> `SEND-TOKEN-TRANSFER-REFUSED` the transfer sent is refused. (For example: Amount insufficient)
 
 -> `SEND-TOKEN-TRANSFER-BUSY` the transfer sent is refused, because the blockchain check your balance.
+
+
+<h3>18. /get_total_transaction_sync</h2>
+
+This command permit to return the total amount of transaction(s) synced stored inside your RPC Wallet.
+
+<h4>Ouput</h4>
+
+| Field | Type | Description |
+| --- | --- | --- |
+| result | long | Return the total amount of transaction(s) synced stored. |
+
 
 ## 2. Use the encryption key option to send requests encrypted
 
