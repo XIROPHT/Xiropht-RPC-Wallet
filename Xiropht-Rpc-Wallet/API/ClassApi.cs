@@ -539,7 +539,6 @@ namespace Xiropht_Rpc_Wallet.API
                                                 if (totalTransactionTravel >= startIndex && totalTransactionTravel <= endIndex)
                                                 {
                                                     string transaction = walletObject.Key;
-                                                    Console.WriteLine(transaction);
                                                     if (transaction != null)
                                                     {
 
