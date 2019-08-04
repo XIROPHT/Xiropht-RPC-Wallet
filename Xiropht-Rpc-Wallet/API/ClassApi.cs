@@ -1080,14 +1080,9 @@ namespace Xiropht_Rpc_Wallet.API
                     {
                         case ClassApiEnumeration.GetTotalWalletTransactionSync:
 
-                            long totalTransactionSync = 0;
-                            foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent.ToArray())
-                            {
-                                totalTransactionSync += walletObject.Value.GetWalletTotalTransactionSync() + walletObject.Value.GetWalletTotalAnonymousTransactionSync();
-                            }
                             var totalTransactionSyncObject = new ClassApiJsonTotalTransactionSync()
                             {
-                                result = totalTransactionSync
+                                result = ClassSyncDatabase.DatabaseTransactionSync.Count
                             };
 
                             string data = JsonConvert.SerializeObject(totalTransactionSyncObject);

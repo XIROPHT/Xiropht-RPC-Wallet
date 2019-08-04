@@ -17,6 +17,12 @@ using Xiropht_Rpc_Wallet.Wallet;
 
 namespace Xiropht_Rpc_Wallet
 {
+    public class RpcWalletArgument
+    {
+        public const string RpcWalletArgumentPassword = "--rpc-password=";
+        public const string RpcWalletArgumentLogLevel = "--rpc-log-level=";
+    }
+
     class Program
     {
         private const string UnexpectedExceptionFile = "\\error_rpc_wallet.txt";
@@ -36,8 +42,13 @@ namespace Xiropht_Rpc_Wallet
             ClassConsole.ConsoleWriteLine(ClassConnectorSetting.CoinName + " RPC Wallet - " + Assembly.GetExecutingAssembly().GetName().Version + "R", ClassConsoleColorEnumeration.IndexConsoleBlueLog, LogLevel);
             if (ClassRpcSetting.InitializeRpcWalletSetting())
             {
-                ClassConsole.ConsoleWriteLine("Please write your rpc wallet password for decrypt your databases of wallet (Input keys are hidden): ", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
-                ClassRpcDatabase.SetRpcDatabasePassword(ClassUtility.GetHiddenConsoleInput());
+
+                HandleArgument(args);
+                if (!ClassRpcDatabase.PasswordIsSetByArgument)
+                {
+                    ClassConsole.ConsoleWriteLine("Please write your rpc wallet password for decrypt your databases of wallet (Input keys are hidden): ", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
+                    ClassRpcDatabase.SetRpcDatabasePassword(ClassUtility.GetHiddenConsoleInput());
+                }
                 ClassConsole.ConsoleWriteLine("RPC Wallet Database loading..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
                 while (!ClassRpcDatabase.LoadRpcDatabaseFile())
                 {
@@ -91,6 +102,45 @@ namespace Xiropht_Rpc_Wallet
                 Environment.Exit(0);
             }
 
+        }
+
+        /// <summary>
+        /// Handle arguments send on startup.
+        /// </summary>
+        /// <param name="argumentList"></param>
+        private static void HandleArgument(string[] argumentList)
+        {
+            if (argumentList != null)
+            {
+                if (argumentList.Length > 0)
+                {
+                    foreach (var argument in argumentList)
+                    {
+                        if (argument != null)
+                        {
+#if DEBUG
+                            Console.WriteLine("Argument get: " + argument);
+#endif
+                            if (argument.StartsWith(RpcWalletArgument.RpcWalletArgumentPassword))
+                            {
+                                ClassRpcDatabase.PasswordIsSetByArgument = true;
+                                ClassRpcDatabase.SetRpcDatabasePassword(argument.Replace(RpcWalletArgument.RpcWalletArgumentPassword, ""));
+                            }
+                            if (argument.StartsWith(RpcWalletArgument.RpcWalletArgumentLogLevel))
+                            {
+                                if (int.TryParse(argument.Replace(RpcWalletArgument.RpcWalletArgumentLogLevel, ""), out var logLevel))
+                                {
+                                    LogLevel = logLevel;
+                                }
+                                else
+                                {
+                                    ClassConsole.ConsoleWriteLine("Cannot read "+argument+" argument, the log level is wrong.", ClassConsoleColorEnumeration.IndexConsoleRedLog, LogLevel);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>

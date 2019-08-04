@@ -29,6 +29,7 @@ namespace Xiropht_Rpc_Wallet.Database
         private static StreamWriter RpcDatabaseStreamWriter; // Permit to keep alive a stream writer for write a new wallet information created.
         public static bool InSave;
         public static bool InSaveBackup;
+        public static bool PasswordIsSetByArgument;
         private static Thread ThreadRpcBackupWalletDatabase;
 
         /// <summary>
