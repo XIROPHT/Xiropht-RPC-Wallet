@@ -18,6 +18,7 @@ using Xiropht_Rpc_Wallet.Setting;
 using System.Net.Sockets;
 using System.Text;
 using Xiropht_Rpc_Wallet.Utility;
+using System.Collections.Generic;
 
 namespace Xiropht_Rpc_Wallet.Wallet
 {
@@ -50,7 +51,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         bool seedNodeSelected = false;
                         if (ClassConnectorSetting.SeedNodeIp.Count > 1)
                         {
-                            foreach (var seedNode in ClassConnectorSetting.SeedNodeIp.ToArray())
+                            foreach (var seedNode in GetSeedNodeSpeedList())
                             {
                                 getSeedNodeRandom = seedNode.Key;
                                 Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(seedNode.Key, ClassConnectorSetting.SeedNodeTokenPort));
@@ -170,7 +171,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         {
             string getSeedNodeRandom = string.Empty;
             bool seedNodeSelected = false;
-            foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
+            foreach (var seedNode in GetSeedNodeSpeedList())
             {
                 getSeedNodeRandom = seedNode.Key;
                 Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(seedNode.Key, ClassConnectorSetting.SeedNodeTokenPort));
@@ -186,6 +187,37 @@ namespace Xiropht_Rpc_Wallet.Wallet
                 await GetWalletBalanceTokenAsync(getSeedNodeRandom, walletAddress);
                 ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetWalletOnUpdateStatus(false);
             }
+        }
+
+        public static Dictionary<string, int> GetSeedNodeSpeedList()
+        {
+            Dictionary<string, int> ListOfSeedNodesSpeed = new Dictionary<string, int>();
+            foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
+            {
+
+                try
+                {
+                    int seedNodeResponseTime = -1;
+                    Task taskCheckSeedNode = Task.Run(() => seedNodeResponseTime = CheckPing.CheckPingHost(seedNode.Key, true));
+                    taskCheckSeedNode.Wait(ClassConnectorSetting.MaxPingDelay);
+                    if (seedNodeResponseTime == -1)
+                    {
+                        seedNodeResponseTime = ClassConnectorSetting.MaxSeedNodeTimeoutConnect;
+                    }
+#if DEBUG
+                    Console.WriteLine(seedNode.Key + " response time: " + seedNodeResponseTime + " ms.");
+#endif
+                    ListOfSeedNodesSpeed.Add(seedNode.Key, seedNodeResponseTime);
+
+                }
+                catch
+                {
+                    ListOfSeedNodesSpeed.Add(seedNode.Key, ClassConnectorSetting.MaxSeedNodeTimeoutConnect); // Max delay.
+                }
+
+            }
+
+            return ListOfSeedNodesSpeed.OrderBy(u => u.Value).ToDictionary(z => z.Key, y => y.Value);
         }
 
         /// <summary>
@@ -571,7 +603,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds());
                     string getSeedNodeRandom = string.Empty;
                     bool seedNodeSelected = false;
-                    foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
+                    foreach (var seedNode in GetSeedNodeSpeedList())
                     {
                         getSeedNodeRandom = seedNode.Key;
                         Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(seedNode.Key, ClassConnectorSetting.SeedNodeTokenPort));
@@ -642,7 +674,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds());
                     string getSeedNodeRandom = string.Empty;
                     bool seedNodeSelected = false;
-                    foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
+                    foreach (var seedNode in GetSeedNodeSpeedList())
                     {
                         getSeedNodeRandom = seedNode.Key;
                         Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(getSeedNodeRandom, ClassConnectorSetting.SeedNodeTokenPort));

@@ -123,7 +123,7 @@ namespace Xiropht_Rpc_Wallet.Database
                     }
                 }
                 TotalTransactionRead++;
-                ClassConsole.ConsoleWriteLine("Total transaction saved: " + TotalTransactionRead);
+                ClassConsole.ConsoleWriteLine("Total transaction saved: " + DatabaseTransactionSync.Count);
                 InSave = false;
             }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Current);
         }
