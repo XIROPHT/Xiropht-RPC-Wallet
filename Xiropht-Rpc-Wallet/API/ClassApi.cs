@@ -39,6 +39,9 @@ namespace Xiropht_Rpc_Wallet.API
         public const string GetWalletTransactionByHash = "get_wallet_transaction_by_hash"; // Get a selected transaction by a transaction hash selected and a wallet address selected.
         public const string SendTransactionByWalletAddress = "send_transaction_by_wallet_address"; // Sent a transaction from a selected wallet address.
         public const string SendTransferByWalletAddress = "send_transfer_by_wallet_address"; // Sent a transfer from a selected wallet address.
+        public const string TaskSendTransaction = "task_send_transaction"; // Schedule a task for send a transaction.
+        public const string TaskSendTransfer = "task_send_transfer"; // Schedule a task for send a transaction.
+        public const string ClearTask = "clear_task"; // Clear complete/failed task.
         public const string UpdateWalletByAddress = "update_wallet_by_address"; // Update manually a selected wallet by his address target.
         public const string UpdateWalletByIndex = "update_wallet_by_index"; // Update manually a selected wallet by his index target.
         public const string CreateWallet = "create_wallet"; // Create a new wallet, return wallet address.
@@ -50,6 +53,10 @@ namespace Xiropht_Rpc_Wallet.API
         public const string IndexError = "index_error";
         public const string TransactionEmpty = "transaction_empty";
         public const string WalletBusyOnUpdate = "wallet_busy_on_update";
+        public const string ClearTaskComplete = "clear_task_complete";
+        public const string ClearTaskError = "clear_task_error";
+        public const string TaskInsertError = "task_insert_error";
+        public const string TaskDisabled = "task_disabled";
     }
 
     public class ClassApi
@@ -258,7 +265,6 @@ namespace Xiropht_Rpc_Wallet.API
                                             }
                                             ClassConsole.ConsoleWriteLine("HTTP API - decrypted packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
                                         }
-
                                         await HandlePacketHttpAsync(packet);
                                         break;
                                     }
@@ -1076,8 +1082,44 @@ namespace Xiropht_Rpc_Wallet.API
                 }
                 else
                 {
+                    string data = string.Empty;
+                    StringBuilder builder = new StringBuilder();
                     switch (packet)
                     {
+                        case ClassApiEnumeration.ClearTask:
+                            if (ClassRpcSetting.RpcWalletEnableApiTaskScheduler)
+                            {
+                                var clearTaskResult = ClassApiTaskScheduler.ClearTaskScheduledComplete();
+
+                                var clearTaskJsonObject = new ClassApiJsonTaskClearResult();
+                                
+                                if (clearTaskResult.Item1)
+                                {
+                                    clearTaskJsonObject.result = ClassApiEnumeration.ClearTaskComplete;
+                                    clearTaskJsonObject.total_task_cleared = clearTaskResult.Item2;
+                                }
+                                else
+                                {
+                                    clearTaskJsonObject.result = ClassApiEnumeration.ClearTaskError;
+                                    clearTaskJsonObject.total_task_cleared = clearTaskResult.Item2;
+                                }
+                                data = JsonConvert.SerializeObject(clearTaskJsonObject);
+
+                                builder = new StringBuilder();
+                                builder.AppendLine(@"HTTP/1.1 200 OK");
+                                builder.AppendLine(@"Content-Type: text/plain");
+                                builder.AppendLine(@"Content-Length: " + data.Length);
+                                builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                builder.AppendLine(@"");
+                                builder.AppendLine(@"" + data);
+                                await SendPacketAsync(builder.ToString());
+                                builder.Clear();
+                            }
+                            else
+                            {
+                                await BuildAndSendHttpPacketAsync(ClassApiEnumeration.TaskDisabled);
+                            }
+                            break;
                         case ClassApiEnumeration.GetTotalWalletTransactionSync:
 
                             var totalTransactionSyncObject = new ClassApiJsonTotalTransactionSync()
@@ -1085,9 +1127,9 @@ namespace Xiropht_Rpc_Wallet.API
                                 result = ClassSyncDatabase.DatabaseTransactionSync.Count
                             };
 
-                            string data = JsonConvert.SerializeObject(totalTransactionSyncObject);
+                            data = JsonConvert.SerializeObject(totalTransactionSyncObject);
 
-                            StringBuilder builder = new StringBuilder();
+                            builder = new StringBuilder();
                             builder.AppendLine(@"HTTP/1.1 200 OK");
                             builder.AppendLine(@"Content-Type: text/plain");
                             builder.AppendLine(@"Content-Length: " + data.Length);

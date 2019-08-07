@@ -177,6 +177,10 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                                     ClassWalletUpdater.DisableAutoUpdateWallet();
                                 }
                                 ClassRemoteSync.StopRpcWalletToSync();
+                                if (ClassRpcSetting.RpcWalletEnableRemoteNodeSync)
+                                {
+                                    ClassApiTaskScheduler.StopApiTaskScheduler();
+                                }
                                 if (Program.ThreadRemoteNodeSync != null && (Program.ThreadRemoteNodeSync.IsAlive || Program.ThreadRemoteNodeSync != null))
                                 {
                                     Program.ThreadRemoteNodeSync.Abort();

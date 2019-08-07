@@ -69,6 +69,11 @@ namespace Xiropht_Rpc_Wallet
                         ClassWalletUpdater.EnableAutoUpdateWallet();
                         ClassConsole.ConsoleWriteLine("Enable Auto Update Wallet System done.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);
                     }
+                    if (ClassRpcSetting.RpcWalletEnableApiTaskScheduler)
+                    {
+                        ClassConsole.ConsoleWriteLine("Enable RPC Wallet API Task Scheduler System..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
+                        ClassApiTaskScheduler.StartApiTaskScheduler();
+                    }
                     ClassConsole.ConsoleWriteLine("Start RPC Wallet API Server..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, LogLevel);
                     ClassApi.StartApiHttpServer();
                     ClassConsole.ConsoleWriteLine("Start RPC Wallet API Server sucessfully started.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, LogLevel);

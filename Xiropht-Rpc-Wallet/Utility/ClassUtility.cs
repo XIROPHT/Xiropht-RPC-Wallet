@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Xiropht_Connector_All.Setting;
 using Xiropht_Connector_All.Utils;
 
 namespace Xiropht_Rpc_Wallet.Utility
@@ -112,7 +113,7 @@ namespace Xiropht_Rpc_Wallet.Utility
             string walletPassword = string.Empty;
             while (!CheckSpecialCharacters(walletPassword) || !CheckLetter(walletPassword) || !CheckNumber(walletPassword))
             {
-                for (int i = 0; i < ClassUtils.GetRandomBetween(10, 128); i++)
+                for (int i = 0; i < ClassUtils.GetRandomBetween(ClassConnectorSetting.WalletMinPasswordLength, 128); i++)
                 {
                     var randomUpper = ClassUtils.GetRandomBetween(0, 100);
                     if (randomUpper <= 30)
@@ -127,7 +128,7 @@ namespace Xiropht_Rpc_Wallet.Utility
                     {
                         walletPassword += ListOfSpecialCharacters[ClassUtils.GetRandomBetween(0, ListOfSpecialCharacters.Count - 1)];
                     }
-                    else if (randomUpper > 70)
+                    else
                     {
                         walletPassword += ListOfNumbers[ClassUtils.GetRandomBetween(0, ListOfNumbers.Count - 1)];
                     }

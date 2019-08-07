@@ -50,6 +50,7 @@ namespace Xiropht_Rpc_Wallet.Setting
         public int wallet_backup_lapsing_time_limit;
         public bool wallet_enable_auto_clean_log;
         public int wallet_auto_clean_log_interval;
+        public bool rpc_wallet_enable_api_task_scheduler;
     }
 
     public class ClassRpcSetting
@@ -92,6 +93,8 @@ namespace Xiropht_Rpc_Wallet.Setting
 
         public static int WalletAutoCleanLogInterval = 3600; // Interval of cleanup logs.
 
+        public static bool RpcWalletEnableApiTaskScheduler = false;
+
 
         /// <summary>
         /// Initialize setting of RPC Wallet
@@ -105,6 +108,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                 {
                     bool invalidSetting = false;
                     ClassRpcSettingObject jsonRpcWalletSettingObject = null;
+                    bool needUpdate = false;
                     using (var streamReaderConfigPool = new StreamReader(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + RpcWalletSettingFile)))
                     {
                         string line = string.Empty;
@@ -119,7 +123,10 @@ namespace Xiropht_Rpc_Wallet.Setting
                                 }
                             }
                         }
-
+                        if (!jsonContent.Contains("rpc_wallet_enable_api_task_scheduler"))
+                        {
+                            needUpdate = true;
+                        }
                         try
                         {
                             jsonRpcWalletSettingObject = JsonConvert.DeserializeObject<ClassRpcSettingObject>(jsonContent);
@@ -143,6 +150,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                             return false;
                         }
                     }
+
                     else
                     {
                         if (jsonRpcWalletSettingObject != null)
@@ -158,7 +166,8 @@ namespace Xiropht_Rpc_Wallet.Setting
                             }
                             else
                             {
-                                Console.WriteLine("Error on configuration, Exception: " + jsonRpcWalletSettingObject.rpc_wallet_api_ip_bind + " is not an IP.");
+                                Console.WriteLine("Error on configuration, Exception: " + jsonRpcWalletSettingObject.rpc_wallet_api_ip_bind + " can't be parsed. It seems this is not a valid IP.");
+                                error = true;
                             }
                             RpcWalletApiPort = jsonRpcWalletSettingObject.rpc_wallet_api_port;
                             RpcWalletApiIpWhitelist = jsonRpcWalletSettingObject.rpc_wallet_api_ip_whitelist;
@@ -176,6 +185,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                             RpcWalletApiEnableXForwardedForResolver = jsonRpcWalletSettingObject.rpc_wallet_api_enable_x_forwarded_for_resolver;
                             WalletEnableAutoCleanLog = jsonRpcWalletSettingObject.wallet_enable_auto_clean_log;
                             WalletAutoCleanLogInterval = jsonRpcWalletSettingObject.wallet_auto_clean_log_interval;
+                            RpcWalletEnableApiTaskScheduler = jsonRpcWalletSettingObject.rpc_wallet_enable_api_task_scheduler;
 
                             if (error)
                             {
@@ -184,6 +194,14 @@ namespace Xiropht_Rpc_Wallet.Setting
                                 if (!choose)
                                 {
                                     return false;
+                                }
+                            }
+                            else
+                            {
+                                if (needUpdate)
+                                {
+                                    ClassConsole.ConsoleWriteLine("Configuration file of RPC Wallet has been updated to implement a new option.", ClassConsoleColorEnumeration.IndexConsoleYellowLog);
+                                    SaveRpcWalletSetting();
                                 }
                             }
                         }
@@ -639,7 +657,8 @@ namespace Xiropht_Rpc_Wallet.Setting
                 wallet_max_keep_alive_update = WalletMaxKeepAliveUpdate,
                 rpc_wallet_api_enable_x_forwarded_for_resolver = RpcWalletApiEnableXForwardedForResolver,
                 wallet_enable_auto_clean_log = WalletEnableAutoCleanLog,
-                wallet_auto_clean_log_interval = WalletAutoCleanLogInterval
+                wallet_auto_clean_log_interval = WalletAutoCleanLogInterval,
+                rpc_wallet_enable_api_task_scheduler = RpcWalletEnableApiTaskScheduler
             };
             if (IPAddress.TryParse(RpcWalletApiIpBind, out var ipAddress))
             {
@@ -647,7 +666,7 @@ namespace Xiropht_Rpc_Wallet.Setting
             }
             else
             {
-                Console.WriteLine("Error on configuration, Exception: " + RpcWalletApiIpBind + " is not an IP.");
+                Console.WriteLine("Error on configuration, Exception: " + RpcWalletApiIpBind + " can't be parsed. It seems this is not a valid IP.");
                 jsonRpcWalletSettingObject.rpc_wallet_api_ip_bind = string.Empty;
             }
             if (RpcWalletApiIpWhitelist == null)

@@ -68,4 +68,10 @@
     {
         public long result;
     }
+
+    public class ClassApiJsonTaskClearResult
+    {
+        public string result;
+        public long total_task_cleared;
+    }
 }

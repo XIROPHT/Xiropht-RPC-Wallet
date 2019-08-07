@@ -51,7 +51,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         bool seedNodeSelected = false;
                         if (ClassConnectorSetting.SeedNodeIp.Count > 1)
                         {
-                            foreach (var seedNode in GetSeedNodeSpeedList())
+                            foreach (var seedNode in GetSeedNodeSpeedList().ToArray())
                             {
                                 getSeedNodeRandom = seedNode.Key;
                                 Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(seedNode.Key, ClassConnectorSetting.SeedNodeTokenPort));
@@ -64,7 +64,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         }
                         else
                         {
-                            getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ElementAt(0).Key;
+                            getSeedNodeRandom = ClassConnectorSetting.SeedNodeIp.ToArray().ElementAt(0).Key;
                             seedNodeSelected = true;
                         }
                         if (seedNodeSelected)
@@ -171,7 +171,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         {
             string getSeedNodeRandom = string.Empty;
             bool seedNodeSelected = false;
-            foreach (var seedNode in GetSeedNodeSpeedList())
+            foreach (var seedNode in GetSeedNodeSpeedList().ToArray())
             {
                 getSeedNodeRandom = seedNode.Key;
                 Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(seedNode.Key, ClassConnectorSetting.SeedNodeTokenPort));
@@ -189,35 +189,74 @@ namespace Xiropht_Rpc_Wallet.Wallet
             }
         }
 
+        private static Dictionary<string, int> ListOfSeedNodesSpeed = new Dictionary<string, int>();
+
+        /// <summary>
+        /// Get Seed Node list sorted by the faster to the slowest one.
+        /// </summary>
+        /// <returns></returns>
         public static Dictionary<string, int> GetSeedNodeSpeedList()
         {
-            Dictionary<string, int> ListOfSeedNodesSpeed = new Dictionary<string, int>();
-            foreach (var seedNode in ClassConnectorSetting.SeedNodeIp)
+            if (ListOfSeedNodesSpeed.Count == 0)
             {
-
-                try
+                foreach (var seedNode in ClassConnectorSetting.SeedNodeIp.ToArray())
                 {
-                    int seedNodeResponseTime = -1;
-                    Task taskCheckSeedNode = Task.Run(() => seedNodeResponseTime = CheckPing.CheckPingHost(seedNode.Key, true));
-                    taskCheckSeedNode.Wait(ClassConnectorSetting.MaxPingDelay);
-                    if (seedNodeResponseTime == -1)
+
+                    try
                     {
-                        seedNodeResponseTime = ClassConnectorSetting.MaxSeedNodeTimeoutConnect;
-                    }
+                        int seedNodeResponseTime = -1;
+                        Task taskCheckSeedNode = Task.Run(() => seedNodeResponseTime = CheckPing.CheckPingHost(seedNode.Key, true));
+                        taskCheckSeedNode.Wait(ClassConnectorSetting.MaxPingDelay);
+                        if (seedNodeResponseTime == -1)
+                        {
+                            seedNodeResponseTime = ClassConnectorSetting.MaxSeedNodeTimeoutConnect;
+                        }
 #if DEBUG
-                    Console.WriteLine(seedNode.Key + " response time: " + seedNodeResponseTime + " ms.");
+                        Console.WriteLine(seedNode.Key + " response time: " + seedNodeResponseTime + " ms.");
 #endif
-                    ListOfSeedNodesSpeed.Add(seedNode.Key, seedNodeResponseTime);
+                        ListOfSeedNodesSpeed.Add(seedNode.Key, seedNodeResponseTime);
+
+                    }
+                    catch
+                    {
+                        ListOfSeedNodesSpeed.Add(seedNode.Key, ClassConnectorSetting.MaxSeedNodeTimeoutConnect); // Max delay.
+                    }
 
                 }
-                catch
+            }
+            else if (ListOfSeedNodesSpeed.Count != ClassConnectorSetting.SeedNodeIp.Count)
+            {
+                ClassConsole.ConsoleWriteLine("New seed node(s) listed, update the list of seed nodes sorted by their ping time.", ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
+                var tmpListOfSeedNodesSpeed = new Dictionary<string, int>();
+                foreach (var seedNode in ClassConnectorSetting.SeedNodeIp.ToArray())
                 {
-                    ListOfSeedNodesSpeed.Add(seedNode.Key, ClassConnectorSetting.MaxSeedNodeTimeoutConnect); // Max delay.
+
+                    try
+                    {
+                        int seedNodeResponseTime = -1;
+                        Task taskCheckSeedNode = Task.Run(() => seedNodeResponseTime = CheckPing.CheckPingHost(seedNode.Key, true));
+                        taskCheckSeedNode.Wait(ClassConnectorSetting.MaxPingDelay);
+                        if (seedNodeResponseTime == -1)
+                        {
+                            seedNodeResponseTime = ClassConnectorSetting.MaxSeedNodeTimeoutConnect;
+                        }
+#if DEBUG
+                        Console.WriteLine(seedNode.Key + " response time: " + seedNodeResponseTime + " ms.");
+#endif
+                        tmpListOfSeedNodesSpeed.Add(seedNode.Key, seedNodeResponseTime);
+
+                    }
+                    catch
+                    {
+                        tmpListOfSeedNodesSpeed.Add(seedNode.Key, ClassConnectorSetting.MaxSeedNodeTimeoutConnect); // Max delay.
+                    }
+
                 }
+                ListOfSeedNodesSpeed = tmpListOfSeedNodesSpeed;
+                ClassConsole.ConsoleWriteLine("List of seed nodes sorted by their ping time done.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
 
             }
-
-            return ListOfSeedNodesSpeed.OrderBy(u => u.Value).ToDictionary(z => z.Key, y => y.Value);
+            return ListOfSeedNodesSpeed.ToArray().OrderBy(u => u.Value).ToDictionary(z => z.Key, y => y.Value);
         }
 
         /// <summary>
@@ -603,7 +642,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds());
                     string getSeedNodeRandom = string.Empty;
                     bool seedNodeSelected = false;
-                    foreach (var seedNode in GetSeedNodeSpeedList())
+                    foreach (var seedNode in GetSeedNodeSpeedList().ToArray())
                     {
                         getSeedNodeRandom = seedNode.Key;
                         Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(seedNode.Key, ClassConnectorSetting.SeedNodeTokenPort));
@@ -674,7 +713,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     ClassRpcDatabase.RpcDatabaseContent[walletAddress].SetLastWalletUpdate(DateTimeOffset.Now.ToUnixTimeSeconds());
                     string getSeedNodeRandom = string.Empty;
                     bool seedNodeSelected = false;
-                    foreach (var seedNode in GetSeedNodeSpeedList())
+                    foreach (var seedNode in GetSeedNodeSpeedList().ToArray())
                     {
                         getSeedNodeRandom = seedNode.Key;
                         Task taskCheckSeedNode = Task.Run(async () => seedNodeSelected = await CheckTcp.CheckTcpClientAsync(getSeedNodeRandom, ClassConnectorSetting.SeedNodeTokenPort));
@@ -727,7 +766,8 @@ namespace Xiropht_Rpc_Wallet.Wallet
 
     public class SendTcpTokenPacketObject : IDisposable
     {
-#region Disposing Part Implementation 
+
+        #region Disposing Part Implementation 
 
         private bool _disposed;
 
