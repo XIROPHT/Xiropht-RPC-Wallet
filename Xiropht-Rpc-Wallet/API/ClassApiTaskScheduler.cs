@@ -26,14 +26,14 @@ namespace Xiropht_Rpc_Wallet.API
 
     public class ClassApiTask
     {
-        public long TaskDate;
+        public long TaskDate = 0;
         public ClassApiTaskStatus TaskStatus;
         public ClassApiTaskType TaskType;
-        public string TaskWalletSrc;
-        public string TaskWalletAmount;
-        public string TaskWalletFee;
-        public string TaskWalletAnonymity;
-        public string TaskWalletDst;
+        public string TaskWalletSrc = string.Empty;
+        public string TaskWalletAmount = "0";
+        public string TaskWalletFee = "0";
+        public string TaskWalletAnonymity = "0";
+        public string TaskWalletDst = string.Empty;
         public string TaskResult = string.Empty;
     }
 
