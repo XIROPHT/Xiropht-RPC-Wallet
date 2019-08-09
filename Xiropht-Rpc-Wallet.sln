@@ -40,4 +40,7 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|Default = Release|Default
 	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
 EndGlobal

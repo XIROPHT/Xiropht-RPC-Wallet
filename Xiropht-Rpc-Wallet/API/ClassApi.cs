@@ -41,6 +41,7 @@ namespace Xiropht_Rpc_Wallet.API
         public const string SendTransferByWalletAddress = "send_transfer_by_wallet_address"; // Sent a transfer from a selected wallet address.
         public const string TaskSendTransaction = "task_send_transaction"; // Schedule a task for send a transaction.
         public const string TaskSendTransfer = "task_send_transfer"; // Schedule a task for send a transaction.
+        public const string GetTaskScheduled = "get_task_scheduled"; // Get task information scheduled.
         public const string ClearTask = "clear_task"; // Clear complete/failed task.
         public const string UpdateWalletByAddress = "update_wallet_by_address"; // Update manually a selected wallet by his address target.
         public const string UpdateWalletByIndex = "update_wallet_by_index"; // Update manually a selected wallet by his index target.
@@ -56,6 +57,7 @@ namespace Xiropht_Rpc_Wallet.API
         public const string ClearTaskComplete = "clear_task_complete";
         public const string ClearTaskError = "clear_task_error";
         public const string TaskInsertError = "task_insert_error";
+        public const string TaskNotExist = "task_not_exist";
         public const string TaskDisabled = "task_disabled";
     }
 
@@ -699,7 +701,174 @@ namespace Xiropht_Rpc_Wallet.API
                                 await BuildAndSendHttpPacketAsync(ClassApiEnumeration.PacketNotExist);
                             }
                             break;
+                        case ClassApiEnumeration.TaskSendTransaction:
+                            if (ClassRpcSetting.RpcWalletEnableApiTaskScheduler)
+                            {
+                                if (splitPacket.Length >= 6)
+                                {
+                                    if (long.TryParse(splitPacket[6], out var timeTask))
+                                    {
+                                        var walletAddressSource = splitPacket[1];
+                                        var amount = splitPacket[2];
+                                        var fee = splitPacket[3];
+                                        var anonymousOption = splitPacket[4];
+                                        var walletAddressTarget = splitPacket[5];
 
+                                        var resultTask = ClassApiTaskScheduler.InsertTaskScheduled(ClassApiTaskType.API_TASK_TYPE_TRANSACTION, walletAddressSource, amount, fee, anonymousOption, walletAddressTarget, timeTask);
+                                        if (resultTask.Item1)
+                                        {
+                                            var resultTaskJsonObject = new ClassApiJsonTaskSubmit()
+                                            {
+                                                result = "OK",
+                                                task_hash = resultTask.Item2
+                                            };
+                                            string data = JsonConvert.SerializeObject(resultTaskJsonObject);
+                                            StringBuilder builder = new StringBuilder();
+                                            builder.AppendLine(@"HTTP/1.1 200 OK");
+                                            builder.AppendLine(@"Content-Type: text/plain");
+                                            builder.AppendLine(@"Content-Length: " + data.Length);
+                                            builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                            builder.AppendLine(@"");
+                                            builder.AppendLine(@"" + data);
+                                            await SendPacketAsync(builder.ToString());
+                                            builder.Clear();
+                                        }
+                                        else
+                                        {
+                                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.TaskInsertError);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        await BuildAndSendHttpPacketAsync(ClassApiEnumeration.TaskInsertError);
+                                    }
+                                }
+                                else
+                                {
+                                    await BuildAndSendHttpPacketAsync(ClassApiEnumeration.PacketError);
+                                }
+                            }
+                            else
+                            {
+                                await BuildAndSendHttpPacketAsync(ClassApiEnumeration.TaskDisabled);
+                            }
+                            break;
+                        case ClassApiEnumeration.TaskSendTransfer:
+                            if (ClassRpcSetting.RpcWalletEnableApiTaskScheduler)
+                            {
+                                if (splitPacket.Length >= 5)
+                                {
+                                    if (long.TryParse(splitPacket[4], out var timeTask))
+                                    {
+                                        var walletAddressSource = splitPacket[1];
+                                        var amount = splitPacket[2];
+                                        var walletAddressTarget = splitPacket[3];
+
+                                        var resultTask = ClassApiTaskScheduler.InsertTaskScheduled(ClassApiTaskType.API_TASK_TYPE_TRANSFER, walletAddressSource, amount, string.Empty, string.Empty, walletAddressTarget, timeTask);
+                                        if (resultTask.Item1)
+                                        {
+                                            var resultTaskJsonObject = new ClassApiJsonTaskSubmit()
+                                            {
+                                                result = "OK",
+                                                task_hash = resultTask.Item2
+                                            };
+                                            string data = JsonConvert.SerializeObject(resultTaskJsonObject);
+                                            StringBuilder builder = new StringBuilder();
+                                            builder.AppendLine(@"HTTP/1.1 200 OK");
+                                            builder.AppendLine(@"Content-Type: text/plain");
+                                            builder.AppendLine(@"Content-Length: " + data.Length);
+                                            builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                            builder.AppendLine(@"");
+                                            builder.AppendLine(@"" + data);
+                                            await SendPacketAsync(builder.ToString());
+                                            builder.Clear();
+                                        }
+                                        else
+                                        {
+                                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.TaskInsertError);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        await BuildAndSendHttpPacketAsync(ClassApiEnumeration.TaskInsertError);
+                                    }
+                                }
+                                else
+                                {
+                                    await BuildAndSendHttpPacketAsync(ClassApiEnumeration.PacketError);
+                                }
+                            }
+                            else
+                            {
+                                await BuildAndSendHttpPacketAsync(ClassApiEnumeration.TaskDisabled);
+                            }
+                            break;
+                        case ClassApiEnumeration.GetTaskScheduled:
+                            if (splitPacket.Length >= 1)
+                            {
+                                if (ClassRpcSetting.RpcWalletEnableApiTaskScheduler)
+                                {
+                                    if (ClassApiTaskScheduler.DictionaryApiTaskScheduled.ContainsKey(splitPacket[1]))
+                                    {
+                                        var taskObject = ClassApiTaskScheduler.DictionaryApiTaskScheduled[splitPacket[1]];
+                                        string data = string.Empty;
+                                        if (!string.IsNullOrEmpty(taskObject.TaskResult))
+                                        {
+                                            var taskContentJsonObject = new ClassApiJsonTaskContent()
+                                            {
+                                                task_date_scheduled = taskObject.TaskDate,
+                                                task_status = Enum.GetName(typeof(ClassApiTaskStatus), taskObject.TaskStatus),
+                                                task_type = Enum.GetName(typeof(ClassApiTaskType), taskObject.TaskType),
+                                                task_wallet_src = taskObject.TaskWalletSrc,
+                                                task_amount = decimal.Parse(taskObject.TaskWalletAmount.Replace(".", ","), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                task_fee = decimal.Parse(taskObject.TaskWalletFee.Replace(".", ","), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                task_anonymity = taskObject.TaskWalletAnonymity == "1",
+                                                task_wallet_dst = taskObject.TaskWalletDst,
+                                                task_result = taskObject.TaskResult.Split(new[] { "|" }, StringSplitOptions.None)[0],
+                                                task_tx_hash = taskObject.TaskResult.Split(new[] { "|" }, StringSplitOptions.None)[1]
+                                            };
+                                            data = JsonConvert.SerializeObject(taskContentJsonObject);
+                                        }
+                                        else
+                                        {
+                                            var taskContentJsonObject = new ClassApiJsonTaskContent()
+                                            {
+                                                task_date_scheduled = taskObject.TaskDate,
+                                                task_status = Enum.GetName(typeof(ClassApiTaskStatus), taskObject.TaskStatus),
+                                                task_type = Enum.GetName(typeof(ClassApiTaskType), taskObject.TaskType),
+                                                task_wallet_src = taskObject.TaskWalletSrc,
+                                                task_amount = decimal.Parse(taskObject.TaskWalletAmount.Replace(".", ","), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                task_fee = decimal.Parse(taskObject.TaskWalletFee.Replace(".", ","), NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                task_anonymity = taskObject.TaskWalletAnonymity == "1",
+                                                task_wallet_dst = taskObject.TaskWalletDst
+                                            };
+                                            data = JsonConvert.SerializeObject(taskContentJsonObject);
+                                        }
+                                        StringBuilder builder = new StringBuilder();
+                                        builder.AppendLine(@"HTTP/1.1 200 OK");
+                                        builder.AppendLine(@"Content-Type: text/plain");
+                                        builder.AppendLine(@"Content-Length: " + data.Length);
+                                        builder.AppendLine(@"Access-Control-Allow-Origin: *");
+                                        builder.AppendLine(@"");
+                                        builder.AppendLine(@"" + data);
+                                        await SendPacketAsync(builder.ToString());
+                                        builder.Clear();
+                                    }
+                                    else
+                                    {
+                                        await BuildAndSendHttpPacketAsync(ClassApiEnumeration.TaskNotExist);
+                                    }
+                                }
+                                else
+                                {
+                                    await BuildAndSendHttpPacketAsync(ClassApiEnumeration.TaskDisabled);
+                                }
+                            }
+                            else
+                            {
+                                await BuildAndSendHttpPacketAsync(ClassApiEnumeration.PacketError);
+                            }
+                            break;
                         case ClassApiEnumeration.SendTransferByWalletAddress:
                             if (splitPacket.Length >= 3)
                             {

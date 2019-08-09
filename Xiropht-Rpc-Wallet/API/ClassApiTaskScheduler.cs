@@ -23,6 +23,7 @@ namespace Xiropht_Rpc_Wallet.API
         API_TASK_TYPE_TRANSFER = 1
     }
 
+
     public class ClassApiTask
     {
         public long TaskDate;
@@ -38,7 +39,7 @@ namespace Xiropht_Rpc_Wallet.API
 
     public class ClassApiTaskScheduler
     {
-        private static Dictionary<string, ClassApiTask> DictionaryApiTaskScheduled = new Dictionary<string, ClassApiTask>();
+        public static Dictionary<string, ClassApiTask> DictionaryApiTaskScheduled = new Dictionary<string, ClassApiTask>();
         private static CancellationTokenSource TaskApiSchedulerCancellationSource;
 
         private const int MaxInsertTaskScheduledTimeout = 10; // Attempt pending maximum 10 seconds to generate a unique hash of idenficiation of the task.
@@ -180,7 +181,7 @@ namespace Xiropht_Rpc_Wallet.API
                 long dateInsertEnd = DateTimeOffset.Now.ToUnixTimeSeconds() + MaxInsertTaskScheduledTimeout;
 
                 bool exist = true;
-                while (exist && dateInsertEnd < DateTimeOffset.Now.ToUnixTimeSeconds())
+                while (exist && dateInsertEnd >= DateTimeOffset.Now.ToUnixTimeSeconds())
                 {
                     if (DictionaryApiTaskScheduled.Count >= int.MaxValue - 1)
                     {
@@ -190,6 +191,7 @@ namespace Xiropht_Rpc_Wallet.API
                     randomIdentificationHash = GenerateTaskIdentificationHash(walletSrc, walletDst);
                     if (!DictionaryApiTaskScheduled.ContainsKey(randomIdentificationHash))
                     {
+                        dateScheduled = dateScheduled + DateTimeOffset.Now.ToUnixTimeSeconds();
                         DictionaryApiTaskScheduled.Add(randomIdentificationHash, new ClassApiTask() { TaskDate = dateScheduled, TaskType = apiTaskType, TaskStatus = ClassApiTaskStatus.API_TASK_STATUS_PENDING, TaskWalletAmount = amount, TaskWalletFee = fee, TaskWalletAnonymity = anonymous, TaskWalletSrc = walletSrc, TaskWalletDst = walletDst, TaskResult = string.Empty });
                         long startTaskScheduled = dateScheduled - DateTimeOffset.Now.ToUnixTimeSeconds();
                         if (startTaskScheduled < 0)

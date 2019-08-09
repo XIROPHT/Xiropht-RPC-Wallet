@@ -74,4 +74,24 @@
         public string result;
         public long total_task_cleared;
     }
+
+    public class ClassApiJsonTaskSubmit
+    {
+        public string result;
+        public string task_hash;
+    }
+
+    public class ClassApiJsonTaskContent
+    {
+        public long task_date_scheduled;
+        public string task_status;
+        public string task_type;
+        public string task_wallet_src;
+        public decimal task_amount;
+        public decimal task_fee;
+        public bool task_anonymity;
+        public string task_wallet_dst;
+        public string task_result = string.Empty;
+        public string task_tx_hash = string.Empty;
+    }
 }
