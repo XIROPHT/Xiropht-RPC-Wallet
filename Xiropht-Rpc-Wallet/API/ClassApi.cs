@@ -384,6 +384,10 @@ namespace Xiropht_Rpc_Wallet.API
                                     };
 
                                     string data = JsonConvert.SerializeObject(walletUpdateJsonObject);
+                                    if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                    {
+                                        data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                    }
                                     StringBuilder builder = new StringBuilder();
                                     builder.AppendLine(@"HTTP/1.1 200 OK");
                                     builder.AppendLine(@"Content-Type: text/plain");
@@ -430,6 +434,10 @@ namespace Xiropht_Rpc_Wallet.API
                                             };
 
                                             string data = JsonConvert.SerializeObject(walletUpdateJsonObject);
+                                            if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                            {
+                                                data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                            }
                                             StringBuilder builder = new StringBuilder();
                                             builder.AppendLine(@"HTTP/1.1 200 OK");
                                             builder.AppendLine(@"Content-Type: text/plain");
@@ -503,6 +511,10 @@ namespace Xiropht_Rpc_Wallet.API
                                         };
 
                                         string data = JsonConvert.SerializeObject(walletBalanceJsonObject);
+                                        if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                        {
+                                            data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                        }
                                         StringBuilder builder = new StringBuilder();
                                         builder.AppendLine(@"HTTP/1.1 200 OK");
                                         builder.AppendLine(@"Content-Type: text/plain");
@@ -580,7 +592,10 @@ namespace Xiropht_Rpc_Wallet.API
                                         {
 
                                             string data = JsonConvert.SerializeObject(ListOfTransactionPerRange.Values.ToArray());
-
+                                            if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                            {
+                                                data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                            }
                                             StringBuilder builder = new StringBuilder();
                                             builder.AppendLine(@"HTTP/1.1 200 OK");
                                             builder.AppendLine(@"Content-Type: text/plain");
@@ -625,6 +640,10 @@ namespace Xiropht_Rpc_Wallet.API
                                 };
 
                                 string data = JsonConvert.SerializeObject(walletBalanceJsonObject);
+                                if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                {
+                                    data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                }
                                 StringBuilder builder = new StringBuilder();
                                 builder.AppendLine(@"HTTP/1.1 200 OK");
                                 builder.AppendLine(@"Content-Type: text/plain");
@@ -661,6 +680,10 @@ namespace Xiropht_Rpc_Wallet.API
                                     };
 
                                     string data = JsonConvert.SerializeObject(sendTransactionJsonObject);
+                                    if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                    {
+                                        data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                    }
                                     StringBuilder builder = new StringBuilder();
                                     builder.AppendLine(@"HTTP/1.1 200 OK");
                                     builder.AppendLine(@"Content-Type: text/plain");
@@ -685,6 +708,10 @@ namespace Xiropht_Rpc_Wallet.API
                                     };
 
                                     string data = JsonConvert.SerializeObject(sendTransactionJsonObject);
+                                    if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                    {
+                                        data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                    }
                                     StringBuilder builder = new StringBuilder();
                                     builder.AppendLine(@"HTTP/1.1 200 OK");
                                     builder.AppendLine(@"Content-Type: text/plain");
@@ -723,6 +750,10 @@ namespace Xiropht_Rpc_Wallet.API
                                                 task_hash = resultTask.Item2
                                             };
                                             string data = JsonConvert.SerializeObject(resultTaskJsonObject);
+                                            if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                            {
+                                                data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                            }
                                             StringBuilder builder = new StringBuilder();
                                             builder.AppendLine(@"HTTP/1.1 200 OK");
                                             builder.AppendLine(@"Content-Type: text/plain");
@@ -773,6 +804,10 @@ namespace Xiropht_Rpc_Wallet.API
                                                 task_hash = resultTask.Item2
                                             };
                                             string data = JsonConvert.SerializeObject(resultTaskJsonObject);
+                                            if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                            {
+                                                data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                            }
                                             StringBuilder builder = new StringBuilder();
                                             builder.AppendLine(@"HTTP/1.1 200 OK");
                                             builder.AppendLine(@"Content-Type: text/plain");
@@ -844,6 +879,10 @@ namespace Xiropht_Rpc_Wallet.API
                                             };
                                             data = JsonConvert.SerializeObject(taskContentJsonObject);
                                         }
+                                        if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                        {
+                                            data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                        }
                                         StringBuilder builder = new StringBuilder();
                                         builder.AppendLine(@"HTTP/1.1 200 OK");
                                         builder.AppendLine(@"Content-Type: text/plain");
@@ -888,6 +927,10 @@ namespace Xiropht_Rpc_Wallet.API
                                 };
 
                                 string data = JsonConvert.SerializeObject(sendTransactionJsonObject);
+                                if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                {
+                                    data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                }
                                 StringBuilder builder = new StringBuilder();
                                 builder.AppendLine(@"HTTP/1.1 200 OK");
                                 builder.AppendLine(@"Content-Type: text/plain");
@@ -968,6 +1011,10 @@ namespace Xiropht_Rpc_Wallet.API
                                             wallet_total_transaction = walletObject.Value.GetWalletTotalTransactionSync()
                                         };
                                         string data = JsonConvert.SerializeObject(walletTotalTransactionJsonObject);
+                                        if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                        {
+                                            data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                        }
                                         StringBuilder builder = new StringBuilder();
                                         builder.AppendLine(@"HTTP/1.1 200 OK");
                                         builder.AppendLine(@"Content-Type: text/plain");
@@ -1006,6 +1053,10 @@ namespace Xiropht_Rpc_Wallet.API
                                             wallet_total_anonymous_transaction = walletObject.Value.GetWalletTotalAnonymousTransactionSync()
                                         };
                                         string data = JsonConvert.SerializeObject(walletTotalTransactionJsonObject);
+                                        if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                        {
+                                            data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                        }
                                         StringBuilder builder = new StringBuilder();
                                         builder.AppendLine(@"HTTP/1.1 200 OK");
                                         builder.AppendLine(@"Content-Type: text/plain");
@@ -1036,6 +1087,10 @@ namespace Xiropht_Rpc_Wallet.API
                                     wallet_total_transaction = ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletTotalTransactionSync()
                                 };
                                 string data = JsonConvert.SerializeObject(walletTotalTransactionJsonObject);
+                                if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                {
+                                    data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                }
                                 StringBuilder builder = new StringBuilder();
                                 builder.AppendLine(@"HTTP/1.1 200 OK");
                                 builder.AppendLine(@"Content-Type: text/plain");
@@ -1060,6 +1115,10 @@ namespace Xiropht_Rpc_Wallet.API
                                     wallet_total_anonymous_transaction = ClassRpcDatabase.RpcDatabaseContent[splitPacket[1]].GetWalletTotalAnonymousTransactionSync()
                                 };
                                 string data = JsonConvert.SerializeObject(walletTotalTransactionJsonObject);
+                                if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                {
+                                    data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                }
                                 StringBuilder builder = new StringBuilder();
                                 builder.AppendLine(@"HTTP/1.1 200 OK");
                                 builder.AppendLine(@"Content-Type: text/plain");
@@ -1105,7 +1164,10 @@ namespace Xiropht_Rpc_Wallet.API
                                             };
 
                                             string data = JsonConvert.SerializeObject(transactionJsonObject);
-
+                                            if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                            {
+                                                data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                            }
                                             StringBuilder builder = new StringBuilder();
                                             builder.AppendLine(@"HTTP/1.1 200 OK");
                                             builder.AppendLine(@"Content-Type: text/plain");
@@ -1166,7 +1228,10 @@ namespace Xiropht_Rpc_Wallet.API
                                             };
 
                                             string data = JsonConvert.SerializeObject(transactionJsonObject);
-
+                                            if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                            {
+                                                data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                            }
                                             StringBuilder builder = new StringBuilder();
                                             builder.AppendLine(@"HTTP/1.1 200 OK");
                                             builder.AppendLine(@"Content-Type: text/plain");
@@ -1223,7 +1288,10 @@ namespace Xiropht_Rpc_Wallet.API
                                     };
 
                                     string data = JsonConvert.SerializeObject(transactionJsonObject);
-
+                                    if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                    {
+                                        data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                    }
                                     StringBuilder builder = new StringBuilder();
                                     builder.AppendLine(@"HTTP/1.1 200 OK");
                                     builder.AppendLine(@"Content-Type: text/plain");
@@ -1273,7 +1341,10 @@ namespace Xiropht_Rpc_Wallet.API
                                     clearTaskJsonObject.total_task_cleared = clearTaskResult.Item2;
                                 }
                                 data = JsonConvert.SerializeObject(clearTaskJsonObject);
-
+                                if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                                {
+                                    data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                                }
                                 builder = new StringBuilder();
                                 builder.AppendLine(@"HTTP/1.1 200 OK");
                                 builder.AppendLine(@"Content-Type: text/plain");
@@ -1297,7 +1368,10 @@ namespace Xiropht_Rpc_Wallet.API
                             };
 
                             data = JsonConvert.SerializeObject(totalTransactionSyncObject);
-
+                            if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                            {
+                                data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                            }
                             builder = new StringBuilder();
                             builder.AppendLine(@"HTTP/1.1 200 OK");
                             builder.AppendLine(@"Content-Type: text/plain");
@@ -1315,7 +1389,10 @@ namespace Xiropht_Rpc_Wallet.API
                                 result = ClassRpcDatabase.RpcDatabaseContent.Count
                             };
                             data = JsonConvert.SerializeObject(totalWalletObject);
-
+                            if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
+                            {
+                                data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
+                            }
                             builder = new StringBuilder();
                             builder.AppendLine(@"HTTP/1.1 200 OK");
                             builder.AppendLine(@"Content-Type: text/plain");
