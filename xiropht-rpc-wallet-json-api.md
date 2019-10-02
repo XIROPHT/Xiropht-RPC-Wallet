@@ -343,7 +343,7 @@ Schedule a task of sending transaction, executed after the time scheduled in sec
 
 ----------------------------------------------------------------------------------------
 
-<h3>19. /task_send_transaction|wallet_address_source|amount|wallet_address_target|time_in_second</h3>
+<h3>20. /task_send_transaction|wallet_address_source|amount|wallet_address_target|time_in_second</h3>
 
 Schedule a task of sending transfer, executed after the time scheduled in seconds.
 
@@ -354,7 +354,7 @@ Schedule a task of sending transfer, executed after the time scheduled in second
 
 ----------------------------------------------------------------------------------------
 
-<h3>20. /get_task_scheduled|task_hash</h3>
+<h3>21. /get_task_scheduled|task_hash</h3>
 
 Return informations of the task scheduled. 
 
@@ -373,7 +373,7 @@ Return informations of the task scheduled.
 
 ----------------------------------------------------------------------------------------
 
-<h3>21. /clear_task</h3>
+<h3>22. /clear_task</h3>
 
 Clear every tasks complete or failed, return the total amount of tasks removed.
 
