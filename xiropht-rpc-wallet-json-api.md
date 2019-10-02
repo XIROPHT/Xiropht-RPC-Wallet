@@ -343,7 +343,7 @@ Schedule a task of sending transaction, executed after the time scheduled in sec
 
 ----------------------------------------------------------------------------------------
 
-<h3>20. /task_send_transaction|wallet_address_source|amount|wallet_address_target|time_in_second</h3>
+<h3>20. /task_send_transfer|wallet_address_source|amount|wallet_address_target|time_in_second</h3>
 
 Schedule a task of sending transfer, executed after the time scheduled in seconds.
 
