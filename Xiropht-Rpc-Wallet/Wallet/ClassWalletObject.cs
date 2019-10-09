@@ -9,50 +9,53 @@ namespace Xiropht_Rpc_Wallet.Wallet
 {
     public class ClassWalletObject
     {
-        private string WalletAddress;
-        private string WalletPublicKey;
-        private string WalletPassword;
-        private string WalletBalance;
-        private string WalletPrivateKey;
-        private string WalletPinCode;
-        private string WalletPendingBalance;
-        private string WalletUniqueId;
-        private string WalletAnonymousUniqueId;
-        private bool WalletOnSendingTransaction;
-        private long WalletLastUpdate;
-        private Dictionary<string, string> WalletListOfTransaction;
-        private Dictionary<string, string> WalletListOfAnonymousTransaction;
-        private string WalletContentReadLine;
-        private bool WalletInUpdate;
-        private Tuple<bool, string> WalletCurrentToken;
+        private string _walletAddress;
+        private string _walletPublicKey;
+        private string _walletPassword;
+        private string _walletBalance;
+        private string _walletPrivateKey;
+        private string _walletPinCode;
+        private string _walletPendingBalance;
+        private string _walletUniqueId;
+        private string _walletAnonymousUniqueId;
+        private bool _walletOnSendingTransaction;
+        private long _walletLastUpdate;
+        private Dictionary<string, string> _walletListOfTransaction;
+        private Dictionary<string, string> _walletListOfAnonymousTransaction;
+        private string _walletContentReadLine;
+        private bool _walletInUpdate;
+        private Tuple<bool, string> _walletCurrentToken;
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="walletAddress"></param>
         /// <param name="walletPublicKey"></param>
+        /// <param name="walletPinCode"></param>
         /// <param name="walletContentReadLine">Content line of the database keep it encrypted.</param>
+        /// <param name="walletPassword"></param>
+        /// <param name="walletPrivateKey"></param>
         public ClassWalletObject(string walletAddress, string walletPublicKey, string walletPassword, string walletPrivateKey, string walletPinCode, string walletContentReadLine)
         {
-            WalletAddress = walletAddress;
-            WalletPublicKey = walletPublicKey;
-            WalletPassword = walletPassword;
-            WalletPrivateKey = walletPrivateKey;
-            WalletPinCode = walletPinCode;
+            _walletAddress = walletAddress;
+            _walletPublicKey = walletPublicKey;
+            _walletPassword = walletPassword;
+            _walletPrivateKey = walletPrivateKey;
+            _walletPinCode = walletPinCode;
 #if DEBUG
-            ClassConsole.ConsoleWriteLine("ClassWalletObject - Initialize object -> Wallet Address: " + WalletAddress + " | Wallet Public Key: " + WalletPublicKey + " | Wallet Private Key: " + WalletPrivateKey + " | Wallet Password: " + walletPassword + " | Wallet Pin Code: " + walletPinCode);
+            ClassConsole.ConsoleWriteLine("ClassWalletObject - Initialize object -> Wallet Address: " + _walletAddress + " | Wallet Public Key: " + _walletPublicKey + " | Wallet Private Key: " + _walletPrivateKey + " | Wallet Password: " + walletPassword + " | Wallet Pin Code: " + walletPinCode);
 #endif
-            WalletBalance = "0";
-            WalletLastUpdate = 0;
-            WalletPendingBalance = "0";
-            WalletUniqueId = "-1";
-            WalletAnonymousUniqueId = "-1";
-            WalletOnSendingTransaction = false;
-            WalletListOfTransaction = new Dictionary<string, string>();
-            WalletListOfAnonymousTransaction = new Dictionary<string, string>();
-            WalletContentReadLine = walletContentReadLine;
-            WalletInUpdate = false;
-            WalletCurrentToken = new Tuple<bool, string>(false, string.Empty);
+            _walletBalance = "0";
+            _walletLastUpdate = 0;
+            _walletPendingBalance = "0";
+            _walletUniqueId = "-1";
+            _walletAnonymousUniqueId = "-1";
+            _walletOnSendingTransaction = false;
+            _walletListOfTransaction = new Dictionary<string, string>();
+            _walletListOfAnonymousTransaction = new Dictionary<string, string>();
+            _walletContentReadLine = walletContentReadLine;
+            _walletInUpdate = false;
+            _walletCurrentToken = new Tuple<bool, string>(false, string.Empty);
         }
 
         /// <summary>
@@ -61,8 +64,8 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="balance"></param>
         public void SetWalletBalance(string balance)
         {
-            ClassConsole.ConsoleWriteLine("Wallet " + WalletAddress + " - Balance " + WalletBalance + " " + ClassConnectorSetting.CoinNameMin + "->" + balance + " " + ClassConnectorSetting.CoinNameMin, ClassConsoleColorEnumeration.IndexConsoleBlueLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
-            WalletBalance = balance;
+            ClassConsole.ConsoleWriteLine("Wallet " + _walletAddress + " - Balance " + _walletBalance + " " + ClassConnectorSetting.CoinNameMin + "->" + balance + " " + ClassConnectorSetting.CoinNameMin, ClassConsoleColorEnumeration.IndexConsoleBlueLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+            _walletBalance = balance;
         }
 
         /// <summary>
@@ -71,8 +74,8 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="pendingBalance"></param>
         public void SetWalletPendingBalance(string pendingBalance)
         {
-            ClassConsole.ConsoleWriteLine("Wallet " + WalletAddress + " - Pending Balance " + WalletPendingBalance + " " + ClassConnectorSetting.CoinNameMin + "->" + pendingBalance + " " + ClassConnectorSetting.CoinNameMin, ClassConsoleColorEnumeration.IndexConsoleBlueLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
-            WalletPendingBalance = pendingBalance;
+            ClassConsole.ConsoleWriteLine("Wallet " + _walletAddress + " - Pending Balance " + _walletPendingBalance + " " + ClassConnectorSetting.CoinNameMin + "->" + pendingBalance + " " + ClassConnectorSetting.CoinNameMin, ClassConsoleColorEnumeration.IndexConsoleBlueLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+            _walletPendingBalance = pendingBalance;
         }
 
         /// <summary>
@@ -81,18 +84,18 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="uniqueId"></param>
         public void SetWalletUniqueId(string uniqueId)
         {
-            ClassConsole.ConsoleWriteLine("Wallet " + WalletAddress + " - Unique ID " + WalletUniqueId + "->" + uniqueId, ClassConsoleColorEnumeration.IndexConsoleBlueLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
-            WalletUniqueId = uniqueId;
+            ClassConsole.ConsoleWriteLine("Wallet " + _walletAddress + " - Unique ID " + _walletUniqueId + "->" + uniqueId, ClassConsoleColorEnumeration.IndexConsoleBlueLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+            _walletUniqueId = uniqueId;
         }
 
         /// <summary>
         /// Update wallet anonymous unique id (used for synchronisation)
         /// </summary>
-        /// <param name="uniqueId"></param>
+        /// <param name="anonymousUniqueId"></param>
         public void SetWalletAnonymousUniqueId(string anonymousUniqueId)
         {
-            ClassConsole.ConsoleWriteLine("Wallet " + WalletAddress + " - Unique Anonymous ID " + WalletAnonymousUniqueId + "->" + anonymousUniqueId, ClassConsoleColorEnumeration.IndexConsoleBlueLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
-            WalletAnonymousUniqueId = anonymousUniqueId;
+            ClassConsole.ConsoleWriteLine("Wallet " + _walletAddress + " - Unique Anonymous ID " + _walletAnonymousUniqueId + "->" + anonymousUniqueId, ClassConsoleColorEnumeration.IndexConsoleBlueLog, ClassConsoleLogLevelEnumeration.LogLevelWalletObject);
+            _walletAnonymousUniqueId = anonymousUniqueId;
         }
 
         /// <summary>
@@ -101,7 +104,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="dateOfUpdate"></param>
         public void SetLastWalletUpdate(long dateOfUpdate)
         {
-            WalletLastUpdate = dateOfUpdate;
+            _walletLastUpdate = dateOfUpdate;
         }
 
         /// <summary>
@@ -110,7 +113,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="status"></param>
         public void SetWalletOnSendTransactionStatus(bool status)
         {
-            WalletOnSendingTransaction = status;
+            _walletOnSendingTransaction = status;
         }
 
         /// <summary>
@@ -119,7 +122,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="status"></param>
         public void SetWalletOnUpdateStatus(bool status)
         {
-            WalletInUpdate = status;
+            _walletInUpdate = status;
         }
 
         /// <summary>
@@ -128,7 +131,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="walletAddress"></param>
         public void SetWalletAddress(string walletAddress)
         {
-            WalletAddress = walletAddress;
+            _walletAddress = walletAddress;
         }
 
         /// <summary>
@@ -137,7 +140,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="walletPublicKey"></param>
         public void SetWalletPublicKey(string walletPublicKey)
         {
-            WalletPublicKey = walletPublicKey;
+            _walletPublicKey = walletPublicKey;
         }
 
         /// <summary>
@@ -146,7 +149,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="walletPrivateKey"></param>
         public void SetWalletPrivateKey(string walletPrivateKey)
         {
-            WalletPrivateKey = walletPrivateKey;
+            _walletPrivateKey = walletPrivateKey;
         }
 
         /// <summary>
@@ -155,7 +158,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="walletPassword"></param>
         public void SetWalletPassword(string walletPassword)
         {
-             WalletPassword = walletPassword;
+             _walletPassword = walletPassword;
         }
 
         /// <summary>
@@ -164,18 +167,18 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="walletPinCode"></param>
         public void SetWalletPinCode(string walletPinCode)
         {
-            WalletPinCode = walletPinCode;
+            _walletPinCode = walletPinCode;
         }
 
         public void SetWalletCurrentToken(bool status, string token)
         {
-            WalletCurrentToken = new Tuple<bool, string>(status, token);
+            _walletCurrentToken = new Tuple<bool, string>(status, token);
         }
 
 
         public Tuple<bool, string>  GetWalletCurrentToken()
         {
-            return WalletCurrentToken;
+            return _walletCurrentToken;
         }
 
 
@@ -183,17 +186,19 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// Insert a transaction sync on the wallet.
         /// </summary>
         /// <param name="transaction"></param>
+        /// <param name="anonymous"></param>
+        /// <param name="save"></param>
         public bool InsertWalletTransactionSync(string transaction, bool anonymous, bool save = true)
         {
             if (!anonymous)
             {
                 var transactionHash = transaction.Split(new[] { "#" }, StringSplitOptions.None)[2];
-                if (!WalletListOfTransaction.ContainsKey(transactionHash))
+                if (!_walletListOfTransaction.ContainsKey(transactionHash))
                 {
-                    WalletListOfTransaction.Add(transactionHash, transaction);
+                    _walletListOfTransaction.Add(transactionHash, transaction);
                     if (save)
                     {
-                        ClassSyncDatabase.InsertTransactionToSyncDatabaseAsync(WalletAddress, WalletPublicKey, transaction);
+                        ClassSyncDatabase.InsertTransactionToSyncDatabaseAsync(_walletAddress, _walletPublicKey, transaction);
                     }
                     return true;
                 }
@@ -201,12 +206,12 @@ namespace Xiropht_Rpc_Wallet.Wallet
             else
             {
                 var transactionHash = transaction.Split(new[] { "#" }, StringSplitOptions.None)[2];
-                if (!WalletListOfAnonymousTransaction.ContainsKey(transactionHash))
+                if (!_walletListOfAnonymousTransaction.ContainsKey(transactionHash))
                 {
-                    WalletListOfAnonymousTransaction.Add(transactionHash, transaction);
+                    _walletListOfAnonymousTransaction.Add(transactionHash, transaction);
                     if (save)
                     {
-                        ClassSyncDatabase.InsertTransactionToSyncDatabaseAsync(WalletAddress, WalletPublicKey, transaction);
+                        ClassSyncDatabase.InsertTransactionToSyncDatabaseAsync(_walletAddress, _walletPublicKey, transaction);
                     }
                     return true;
                 }
@@ -220,7 +225,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletReadLine()
         {
-            return WalletContentReadLine;
+            return _walletContentReadLine;
         }
 
         /// <summary>
@@ -228,7 +233,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// </summary>
         public string GetWalletUniqueId()
         {
-            return WalletUniqueId;
+            return _walletUniqueId;
         }
 
         /// <summary>
@@ -236,7 +241,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// </summary>
         public string GetWalletAnonymousUniqueId()
         {
-            return WalletAnonymousUniqueId;
+            return _walletAnonymousUniqueId;
         }
 
         /// <summary>
@@ -245,7 +250,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletBalance()
         {
-            return WalletBalance;
+            return _walletBalance;
         }
 
         /// <summary>
@@ -254,7 +259,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletPendingBalance()
         {
-            return WalletPendingBalance;
+            return _walletPendingBalance;
         }
 
         /// <summary>
@@ -263,7 +268,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public long GetLastWalletUpdate()
         {
-            return WalletLastUpdate;
+            return _walletLastUpdate;
         }
 
         /// <summary>
@@ -272,7 +277,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletPublicKey()
         {
-            return WalletPublicKey;
+            return _walletPublicKey;
         }
 
         /// <summary>
@@ -281,7 +286,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletPrivateKey()
         {
-            return WalletPrivateKey;
+            return _walletPrivateKey;
         }
 
         /// <summary>
@@ -290,7 +295,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletAddress()
         {
-            return WalletAddress;
+            return _walletAddress;
         }
 
         /// <summary>
@@ -299,7 +304,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletPassword()
         {
-            return WalletPassword;
+            return _walletPassword;
         }
 
         /// <summary>
@@ -308,7 +313,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletPinCode()
         {
-            return WalletPinCode;
+            return _walletPinCode;
         }
 
         /// <summary>
@@ -317,7 +322,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public bool GetWalletOnSendTransactionStatus()
         {
-            return WalletOnSendingTransaction;
+            return _walletOnSendingTransaction;
         }
 
         /// <summary>
@@ -326,7 +331,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public int GetWalletTotalTransactionSync()
         {
-            return WalletListOfTransaction.Count;
+            return _walletListOfTransaction.Count;
         }
 
         /// <summary>
@@ -335,7 +340,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public int GetWalletTotalAnonymousTransactionSync()
         {
-            return WalletListOfAnonymousTransaction.Count;
+            return _walletListOfAnonymousTransaction.Count;
         }
 
         /// <summary>
@@ -345,9 +350,9 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public string GetWalletTransactionSyncByIndex(int index)
         {
-            if (WalletListOfTransaction.Count > index)
+            if (_walletListOfTransaction.Count > index)
             {
-                return WalletListOfTransaction.ElementAt(index).Value;
+                return _walletListOfTransaction.ElementAt(index).Value;
             }
             return null;
         }
@@ -362,9 +367,9 @@ namespace Xiropht_Rpc_Wallet.Wallet
         public string GetWalletAnonymousTransactionSyncByIndex(int index)
         {
 
-            if (WalletListOfAnonymousTransaction.Count > index)
+            if (_walletListOfAnonymousTransaction.Count > index)
             {
-                return WalletListOfAnonymousTransaction.ElementAt(index).Value;
+                return _walletListOfAnonymousTransaction.ElementAt(index).Value;
             }
             return null;
         }
@@ -373,14 +378,14 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <summary>
         /// Return any kind of transaction synced anonymous or normal selected by his transaction hash.
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="transactionHash"></param>
         /// <returns></returns>
         public Tuple<int, string> GetWalletAnyTransactionSyncByHash(string transactionHash)
         {
-            if (WalletListOfTransaction.ContainsKey(transactionHash))
+            if (_walletListOfTransaction.ContainsKey(transactionHash))
             {
                 int counter = 0;
-                foreach(var transaction in WalletListOfTransaction.ToArray())
+                foreach(var transaction in _walletListOfTransaction.ToArray())
                 {
                     if (transaction.Key == transactionHash)
                     {
@@ -389,10 +394,10 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     counter++;
                 }
             }
-            else if (WalletListOfAnonymousTransaction.ContainsKey(transactionHash))
+            else if (_walletListOfAnonymousTransaction.ContainsKey(transactionHash))
             {
                 int counter = 0;
-                foreach (var transaction in WalletListOfAnonymousTransaction.ToArray())
+                foreach (var transaction in _walletListOfAnonymousTransaction.ToArray())
                 {
                     if (transaction.Key == transactionHash)
                     {
@@ -410,7 +415,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <returns></returns>
         public bool GetWalletUpdateStatus()
         {
-            return WalletInUpdate;
+            return _walletInUpdate;
         }
     }
 }

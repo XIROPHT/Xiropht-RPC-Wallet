@@ -15,40 +15,40 @@ namespace Xiropht_Rpc_Wallet.Remote
 {
     public class ClassRemoteSync
     {
-        private static TcpClient TcpRemoteNodeClient;
-        private static Thread ThreadRemoteNodeListen;
-        private static Thread ThreadRemoteNodeCheckConnection;
-        private static Thread ThreadAutoSync;
-        private static bool ConnectionStatus;
-        private static bool EnableCheckConnectionStatus;
+        private static TcpClient _tcpRemoteNodeClient;
+        private static CancellationTokenSource _cancellationTokenListenRemoteNode;
+        private static CancellationTokenSource _cancellationTokenCheckConnection;
+        private static CancellationTokenSource _cancellationTokenAutoSync;
+        private static bool _connectionStatus;
+        private static bool _enableCheckConnectionStatus;
         private const int MaxTimeout = 30;
 
         /// <summary>
         /// Current wallet to sync.
         /// </summary>
-        private static string CurrentWalletAddressOnSync;
+        private static string _currentWalletAddressOnSync;
 
         /// <summary>
         /// Current wallet uniques id to sync.
         /// </summary>
-        private static string CurrentWalletIdOnSync;
-        private static string CurrentAnonymousWalletIdOnSync;
+        private static string _currentWalletIdOnSync;
+        private static string _currentAnonymousWalletIdOnSync;
 
         /// <summary>
         /// Current total transaction to sync on the wallet.
         /// </summary>
-        private static int CurrentWalletTransactionToSync;
-        private static int CurrentWalletAnonymousTransactionToSync;
+        private static int _currentWalletTransactionToSync;
+        private static int _currentWalletAnonymousTransactionToSync;
 
         /// <summary>
         /// Check if the current wait a transaction.
         /// </summary>
-        private static bool CurrentWalletOnSyncTransaction;
+        private static bool _currentWalletOnSyncTransaction;
 
         /// <summary>
         /// Save last packet received date.
         /// </summary>
-        private static long LastPacketReceived;
+        private static long _lastPacketReceived;
 
 
         /// <summary>
@@ -56,32 +56,32 @@ namespace Xiropht_Rpc_Wallet.Remote
         /// </summary>
         public static async Task ConnectRpcWalletToRemoteNodeSyncAsync()
         {
-            while(!ConnectionStatus && !Program.Exit)
+            while (!_connectionStatus && !Program.Exit)
             {
                 try
                 {
-                    TcpRemoteNodeClient?.Close();
-                    TcpRemoteNodeClient?.Dispose();
-                    TcpRemoteNodeClient = new TcpClient();
-                    await TcpRemoteNodeClient.ConnectAsync(ClassRpcSetting.RpcWalletRemoteNodeHost, ClassRpcSetting.RpcWalletRemoteNodePort);
-                    ConnectionStatus = true;
+                    _tcpRemoteNodeClient?.Close();
+                    _tcpRemoteNodeClient?.Dispose();
+                    _tcpRemoteNodeClient = new TcpClient();
+                    await _tcpRemoteNodeClient.ConnectAsync(ClassRpcSetting.RpcWalletRemoteNodeHost, ClassRpcSetting.RpcWalletRemoteNodePort);
+                    _connectionStatus = true;
                     break;
                 }
                 catch
                 {
                     ClassConsole.ConsoleWriteLine("Unable to connect to Remote Node host " + ClassRpcSetting.RpcWalletRemoteNodeHost + ":" + ClassRpcSetting.RpcWalletRemoteNodePort + " retry in 5 seconds.", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                    ConnectionStatus = false;
+                    _connectionStatus = false;
                 }
                 Thread.Sleep(5000);
             }
-            if (ConnectionStatus)
+            if (_connectionStatus)
             {
                 ClassConsole.ConsoleWriteLine("Connect to Remote Node host " + ClassRpcSetting.RpcWalletRemoteNodeHost + ":" + ClassRpcSetting.RpcWalletRemoteNodePort + " successfully done, start to sync.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
+                _lastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
 
-                if (!EnableCheckConnectionStatus)
+                if (!_enableCheckConnectionStatus)
                 {
-                    EnableCheckConnectionStatus = true;
+                    _enableCheckConnectionStatus = true;
                     CheckRpcWalletConnectionToSync();
                 }
                 ListenRemoteNodeSync();
@@ -94,30 +94,19 @@ namespace Xiropht_Rpc_Wallet.Remote
         /// </summary>
         public static void StopRpcWalletToSync()
         {
-            if (ThreadRemoteNodeListen != null && (ThreadRemoteNodeListen.IsAlive || ThreadRemoteNodeListen != null))
-            {
-                ThreadRemoteNodeListen.Abort();
-                GC.SuppressFinalize(ThreadRemoteNodeListen);
-            }
-            if (ThreadRemoteNodeCheckConnection != null && (ThreadRemoteNodeCheckConnection.IsAlive || ThreadRemoteNodeCheckConnection != null))
-            {
-                ThreadRemoteNodeCheckConnection.Abort();
-                GC.SuppressFinalize(ThreadRemoteNodeCheckConnection);
-            }
-            if (ThreadAutoSync != null && (ThreadAutoSync.IsAlive || ThreadAutoSync != null))
-            {
-                ThreadAutoSync.Abort();
-                GC.SuppressFinalize(ThreadAutoSync);
-            }
-            ConnectionStatus = false;
+            CancelTaskListenRemoteNode();
+            CancelTaskCheckConnection();
+            CancelAutoSync();
+
+            _connectionStatus = false;
             try
             {
-                TcpRemoteNodeClient?.Close();
-                TcpRemoteNodeClient?.Dispose();
+                _tcpRemoteNodeClient?.Close();
+                _tcpRemoteNodeClient?.Dispose();
             }
             catch
             {
-
+                // Ignored
             }
         }
 
@@ -126,35 +115,32 @@ namespace Xiropht_Rpc_Wallet.Remote
         /// </summary>
         private static void ListenRemoteNodeSync()
         {
-            if (ThreadRemoteNodeListen != null && (ThreadRemoteNodeListen.IsAlive || ThreadRemoteNodeListen != null))
+            _cancellationTokenListenRemoteNode = new CancellationTokenSource();
+
+            try
             {
-                ThreadRemoteNodeListen.Abort();
-                GC.SuppressFinalize(ThreadRemoteNodeListen);
-            }
-            ThreadRemoteNodeListen = new Thread(async delegate ()
-            {
-                while(ConnectionStatus && !Program.Exit)
+                Task.Factory.StartNew(async delegate
                 {
-                    try
+                    while (_connectionStatus && !Program.Exit)
                     {
-                        using (var networkReader = new NetworkStream(TcpRemoteNodeClient.Client))
+                        try
                         {
-                            using (BufferedStream bufferedStreamNetwork = new BufferedStream(networkReader, ClassConnectorSetting.MaxNetworkPacketSize))
-                            { 
-                                byte[] buffer = new byte[ClassConnectorSetting.MaxNetworkPacketSize];
-                                int received = await bufferedStreamNetwork.ReadAsync(buffer, 0, buffer.Length);
-                                if (received > 0)
+                            using (var networkReader = new NetworkStream(_tcpRemoteNodeClient.Client))
+                            {
+                                using (BufferedStream bufferedStreamNetwork = new BufferedStream(networkReader, ClassConnectorSetting.MaxNetworkPacketSize))
                                 {
-                                    LastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
-                                    string packetReceived = Encoding.UTF8.GetString(buffer, 0, received);
-                                    if (packetReceived.Contains("*"))
+                                    byte[] buffer = new byte[ClassConnectorSetting.MaxNetworkPacketSize];
+                                    int received = await bufferedStreamNetwork.ReadAsync(buffer, 0, buffer.Length);
+                                    if (received > 0)
                                     {
-                                        var splitPacketReceived = packetReceived.Split(new[] { "*" }, StringSplitOptions.None);
-                                        if (splitPacketReceived.Length > 1)
+                                        _lastPacketReceived = DateTimeOffset.Now.ToUnixTimeSeconds();
+                                        string packetReceived = Encoding.UTF8.GetString(buffer, 0, received);
+                                        if (packetReceived.Contains("*"))
                                         {
-                                            foreach (var packetEach in splitPacketReceived)
+                                            var splitPacketReceived = packetReceived.Split(new[] { "*" }, StringSplitOptions.None);
+                                            if (splitPacketReceived.Length > 1)
                                             {
-                                                if (packetEach != null)
+                                                foreach (var packetEach in splitPacketReceived)
                                                 {
                                                     if (!string.IsNullOrEmpty(packetEach))
                                                     {
@@ -165,29 +151,32 @@ namespace Xiropht_Rpc_Wallet.Remote
                                                     }
                                                 }
                                             }
+                                            else
+                                            {
+                                                HandlePacketReceivedFromSync(packetReceived.Replace("*", ""));
+                                            }
                                         }
                                         else
                                         {
-                                            HandlePacketReceivedFromSync(packetReceived.Replace("*", ""));
+                                            HandlePacketReceivedFromSync(packetReceived);
                                         }
-                                    }
-                                    else
-                                    {
-                                        HandlePacketReceivedFromSync(packetReceived);
                                     }
                                 }
                             }
                         }
+                        catch (Exception error)
+                        {
+                            ClassConsole.ConsoleWriteLine("Exception: " + error.Message + " to listen packet received from Remote Node host " + ClassRpcSetting.RpcWalletRemoteNodeHost + ":" + ClassRpcSetting.RpcWalletRemoteNodePort + " retry to connect in a few seconds..", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
+                            break;
+                        }
                     }
-                    catch(Exception error)
-                    {
-                        ClassConsole.ConsoleWriteLine("Exception: "+error.Message+" to listen packet received from Remote Node host " + ClassRpcSetting.RpcWalletRemoteNodeHost + ":" + ClassRpcSetting.RpcWalletRemoteNodePort + " retry to connect in a few seconds..", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                        break;
-                    }
-                }
-                ConnectionStatus = false;
-            });
-            ThreadRemoteNodeListen.Start();
+                    _connectionStatus = false;
+                }, _cancellationTokenListenRemoteNode.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Catch the exception once the task is cancelled.
+            }
         }
 
         /// <summary>
@@ -201,24 +190,24 @@ namespace Xiropht_Rpc_Wallet.Remote
             switch (splitPacket[0])
             {
                 case ClassRemoteNodeCommandForWallet.RemoteNodeRecvPacketEnumeration.WalletYourNumberTransaction:
-                    ClassConsole.ConsoleWriteLine("Their is " + splitPacket[1] + " transaction to sync for wallet address: " + CurrentWalletAddressOnSync, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                    CurrentWalletTransactionToSync = int.Parse(splitPacket[1]);
-                    CurrentWalletOnSyncTransaction = false;
+                    ClassConsole.ConsoleWriteLine("Their is " + splitPacket[1] + " transaction to sync for wallet address: " + _currentWalletAddressOnSync, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
+                    _currentWalletTransactionToSync = int.Parse(splitPacket[1]);
+                    _currentWalletOnSyncTransaction = false;
                     break;
                 case ClassRemoteNodeCommandForWallet.RemoteNodeRecvPacketEnumeration.WalletYourAnonymityNumberTransaction:
-                    ClassConsole.ConsoleWriteLine("Their is " + splitPacket[1] + " anonymous transaction to sync for wallet address: " + CurrentWalletAddressOnSync, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                    CurrentWalletAnonymousTransactionToSync = int.Parse(splitPacket[1]);
-                    CurrentWalletOnSyncTransaction = false;
+                    ClassConsole.ConsoleWriteLine("Their is " + splitPacket[1] + " anonymous transaction to sync for wallet address: " + _currentWalletAddressOnSync, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
+                    _currentWalletAnonymousTransactionToSync = int.Parse(splitPacket[1]);
+                    _currentWalletOnSyncTransaction = false;
                     break;
                 case ClassRemoteNodeCommandForWallet.RemoteNodeRecvPacketEnumeration.WalletTransactionPerId:
-                    ClassSortingTransaction.SaveTransactionSorted(splitPacket[1], CurrentWalletAddressOnSync, ClassRpcDatabase.RpcDatabaseContent[CurrentWalletAddressOnSync].GetWalletPublicKey(), false);
-                    ClassConsole.ConsoleWriteLine(CurrentWalletAddressOnSync + " total transaction sync " + ClassRpcDatabase.RpcDatabaseContent[CurrentWalletAddressOnSync].GetWalletTotalTransactionSync() + "/" + CurrentWalletTransactionToSync, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                    CurrentWalletOnSyncTransaction = false;
+                    ClassSortingTransaction.SaveTransactionSorted(splitPacket[1], _currentWalletAddressOnSync, ClassRpcDatabase.RpcDatabaseContent[_currentWalletAddressOnSync].GetWalletPublicKey(), false);
+                    ClassConsole.ConsoleWriteLine(_currentWalletAddressOnSync + " total transaction sync " + ClassRpcDatabase.RpcDatabaseContent[_currentWalletAddressOnSync].GetWalletTotalTransactionSync() + "/" + _currentWalletTransactionToSync, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
+                    _currentWalletOnSyncTransaction = false;
                     break;
                 case ClassRemoteNodeCommandForWallet.RemoteNodeRecvPacketEnumeration.WalletAnonymityTransactionPerId:
-                    ClassSortingTransaction.SaveTransactionSorted(splitPacket[1], CurrentWalletAddressOnSync, ClassRpcDatabase.RpcDatabaseContent[CurrentWalletAddressOnSync].GetWalletPublicKey(), true);
-                    ClassConsole.ConsoleWriteLine(CurrentWalletAddressOnSync + " total anonymous transaction sync " + ClassRpcDatabase.RpcDatabaseContent[CurrentWalletAddressOnSync].GetWalletTotalAnonymousTransactionSync() + "/" + CurrentWalletAnonymousTransactionToSync, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                    CurrentWalletOnSyncTransaction = false;
+                    ClassSortingTransaction.SaveTransactionSorted(splitPacket[1], _currentWalletAddressOnSync, ClassRpcDatabase.RpcDatabaseContent[_currentWalletAddressOnSync].GetWalletPublicKey(), true);
+                    ClassConsole.ConsoleWriteLine(_currentWalletAddressOnSync + " total anonymous transaction sync " + ClassRpcDatabase.RpcDatabaseContent[_currentWalletAddressOnSync].GetWalletTotalAnonymousTransactionSync() + "/" + _currentWalletAnonymousTransactionToSync, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
+                    _currentWalletOnSyncTransaction = false;
                     break;
                 default:
                     ClassConsole.ConsoleWriteLine("Unknown packet received: " + packet, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
@@ -231,47 +220,106 @@ namespace Xiropht_Rpc_Wallet.Remote
         /// </summary>
         private static void CheckRpcWalletConnectionToSync()
         {
-            if (ThreadRemoteNodeCheckConnection != null && (ThreadRemoteNodeCheckConnection.IsAlive || ThreadRemoteNodeCheckConnection!=null))
+            _cancellationTokenCheckConnection = new CancellationTokenSource();
+
+            try
             {
-                ThreadRemoteNodeCheckConnection.Abort();
-                GC.SuppressFinalize(ThreadRemoteNodeCheckConnection);
-            }
-            ThreadRemoteNodeCheckConnection = new Thread(async delegate ()
-            {
-                while(!Program.Exit)
+                Task.Factory.StartNew(async delegate
                 {
-                    try
+                    while (!Program.Exit)
                     {
-                        if (!ConnectionStatus || LastPacketReceived + MaxTimeout < DateTimeOffset.Now.ToUnixTimeSeconds())
+                        try
                         {
-                            ConnectionStatus = false;
-                            LastPacketReceived = 0;
-                            Thread.Sleep(100);
-                            if (ThreadRemoteNodeListen != null && (ThreadRemoteNodeListen.IsAlive || ThreadRemoteNodeListen != null))
+                            if (!_connectionStatus || _lastPacketReceived + MaxTimeout < DateTimeOffset.Now.ToUnixTimeSeconds())
                             {
-                                ThreadRemoteNodeListen.Abort();
-                                GC.SuppressFinalize(ThreadRemoteNodeListen);
+                                _connectionStatus = false;
+                                _lastPacketReceived = 0;
+                                await Task.Delay(100);
+                                CancelTaskListenRemoteNode();
+                                CancelAutoSync();
+                                await Task.Delay(1000);
+                                ClassConsole.ConsoleWriteLine("Connection to remote node host is closed, retry to connect", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
+                                await ConnectRpcWalletToRemoteNodeSyncAsync();
                             }
-                            if (ThreadAutoSync != null && (ThreadAutoSync.IsAlive || ThreadAutoSync != null))
-                            {
-                                ThreadAutoSync.Abort();
-                                GC.SuppressFinalize(ThreadAutoSync);
-                            }
-                            Thread.Sleep(1000);
-                            ClassConsole.ConsoleWriteLine("Connection to remote node host is closed, retry to connect", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                            await ConnectRpcWalletToRemoteNodeSyncAsync();
                         }
+                        catch
+                        {
+                            _connectionStatus = false;
+                            _lastPacketReceived = 0;
+                        }
+                        await Task.Delay(1000);
                     }
-                    catch
-                    {
-                        ConnectionStatus = false;
-                        LastPacketReceived = 0;
-                    }
-                    Thread.Sleep(1000);
-                }
-            });
-            ThreadRemoteNodeCheckConnection.Start();
+                }, _cancellationTokenCheckConnection.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Catch the exception 
+            }
         }
+
+        /// <summary>
+        /// Cancel the task of listen packets receive from a Remote Node.
+        /// </summary>
+        private static void CancelTaskListenRemoteNode()
+        {
+            try
+            {
+                if (_cancellationTokenListenRemoteNode != null)
+                {
+                    if (!_cancellationTokenListenRemoteNode.IsCancellationRequested)
+                    {
+                        _cancellationTokenListenRemoteNode.Cancel();
+                    }
+                }
+            }
+            catch
+            {
+                // Ignored
+            }
+        }
+
+        /// <summary>
+        /// Cancel the task who check the current connection status.
+        /// </summary>
+        private static void CancelTaskCheckConnection()
+        {
+            try
+            {
+                if (_cancellationTokenCheckConnection != null)
+                {
+                    if (!_cancellationTokenCheckConnection.IsCancellationRequested)
+                    {
+                        _cancellationTokenCheckConnection.Cancel();
+                    }
+                }
+            }
+            catch
+            {
+                // Ignored
+            }
+        }
+
+        /// <summary>
+        /// Cancel the task who auto sync transactions of wallets stored inside the Rpc Wallet Database.
+        /// </summary>
+        private static void CancelAutoSync()
+        {
+            try
+            {
+                if (_cancellationTokenAutoSync != null)
+                {
+                    if (!_cancellationTokenAutoSync.IsCancellationRequested)
+                    {
+                        _cancellationTokenAutoSync.Cancel();
+                    }
+                }
+            }
+            catch
+            {
+                // Ignored
+            }
+        }
+
 
         /// <summary>
         /// Send a packet to remote node.
@@ -282,7 +330,7 @@ namespace Xiropht_Rpc_Wallet.Remote
         {
             try
             {
-                using (var networkWriter = new NetworkStream(TcpRemoteNodeClient.Client))
+                using (var networkWriter = new NetworkStream(_tcpRemoteNodeClient.Client))
                 {
                     using (BufferedStream bufferedStream = new BufferedStream(networkWriter, ClassConnectorSetting.MaxNetworkPacketSize))
                     {
@@ -304,127 +352,129 @@ namespace Xiropht_Rpc_Wallet.Remote
         /// </summary>
         private static void AutoSyncWallet()
         {
-            if (ThreadAutoSync != null && (ThreadAutoSync.IsAlive || ThreadAutoSync != null))
+            _cancellationTokenAutoSync = new CancellationTokenSource();
+            try
             {
-                ThreadAutoSync.Abort();
-                GC.SuppressFinalize(ThreadAutoSync);
-            }
-            ThreadAutoSync = new Thread(async delegate ()
-            {
-                while (ConnectionStatus && !Program.Exit)
+                Task.Factory.StartNew(async delegate
                 {
-                    try
+                    while (_connectionStatus && !Program.Exit)
                     {
-                        foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent.ToArray()) // Copy temporaly the database of wallets in the case of changes on the enumeration done by a parallal process, update sync of all of them.
+                        try
                         {
-
-
-                            if (ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletUniqueId() != "-1" && ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletAnonymousUniqueId() != "-1")
+                            foreach (var walletObject in ClassRpcDatabase.RpcDatabaseContent.ToArray()) // Copy temporaly the database of wallets in the case of changes on the enumeration done by a parallal process, update sync of all of them.
                             {
-                                #region Attempt to sync the current wallet on the database.
 
 
-                                CurrentWalletIdOnSync = walletObject.Value.GetWalletUniqueId();
-                                CurrentAnonymousWalletIdOnSync = walletObject.Value.GetWalletAnonymousUniqueId();
-                                CurrentWalletAddressOnSync = walletObject.Key;
-                                CurrentWalletOnSyncTransaction = true;
-                                if (await SendPacketToRemoteNode(ClassRemoteNodeCommandForWallet.RemoteNodeSendPacketEnumeration.WalletAskHisNumberTransaction + "|" + walletObject.Value.GetWalletUniqueId()))
+                                if (ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletUniqueId() != "-1" && ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletAnonymousUniqueId() != "-1")
                                 {
-                                    while (CurrentWalletOnSyncTransaction)
+                                    #region Attempt to sync the current wallet on the database.
+
+
+                                    _currentWalletIdOnSync = walletObject.Value.GetWalletUniqueId();
+                                    _currentAnonymousWalletIdOnSync = walletObject.Value.GetWalletAnonymousUniqueId();
+                                    _currentWalletAddressOnSync = walletObject.Key;
+                                    _currentWalletOnSyncTransaction = true;
+                                    if (await SendPacketToRemoteNode(ClassRemoteNodeCommandForWallet.RemoteNodeSendPacketEnumeration.WalletAskHisNumberTransaction + "|" + walletObject.Value.GetWalletUniqueId()))
                                     {
-                                        if (!ConnectionStatus)
+                                        while (_currentWalletOnSyncTransaction)
                                         {
-                                            break;
-                                        }
-                                        Thread.Sleep(50);
-                                    }
-                                    
-                                    if (CurrentWalletTransactionToSync > 0)
-                                    {
-                                        if (CurrentWalletTransactionToSync > ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalTransactionSync()) // Start to sync transaction.
-                                        {
-                                            for (int i = ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalTransactionSync(); i < CurrentWalletTransactionToSync; i++)
-                                            {
-                                                CurrentWalletOnSyncTransaction = true;
-                                                if (!await SendPacketToRemoteNode(ClassRemoteNodeCommandForWallet.RemoteNodeSendPacketEnumeration.WalletAskTransactionPerId + "|" + walletObject.Value.GetWalletUniqueId() + "|" + i))
-                                                {
-                                                    ConnectionStatus = false;
-                                                    break;
-                                                }
-                                                while (CurrentWalletOnSyncTransaction)
-                                                {
-                                                    if (!ConnectionStatus)
-                                                    {
-                                                        break;
-                                                    }
-                                                    Thread.Sleep(50);
-                                                }
-                                                
-                                            }
-                                        }
-                                    }
-                                    CurrentWalletOnSyncTransaction = true;
-                                    if (await SendPacketToRemoteNode(ClassRemoteNodeCommandForWallet.RemoteNodeSendPacketEnumeration.WalletAskHisAnonymityNumberTransaction + "|" + walletObject.Value.GetWalletAnonymousUniqueId()))
-                                    {
-                                        while (CurrentWalletOnSyncTransaction)
-                                        {
-                                            if (!ConnectionStatus)
+                                            if (!_connectionStatus)
                                             {
                                                 break;
                                             }
-                                            Thread.Sleep(50);
+                                            await Task.Delay(50);
                                         }
-                                       
-                                        if (CurrentWalletAnonymousTransactionToSync > 0)
+
+                                        if (_currentWalletTransactionToSync > 0)
                                         {
-                                            if (CurrentWalletAnonymousTransactionToSync > ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalAnonymousTransactionSync()) // Start to sync transaction.
+                                            if (_currentWalletTransactionToSync > ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalTransactionSync()) // Start to sync transaction.
                                             {
-                                                for (int i = ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalAnonymousTransactionSync(); i < CurrentWalletAnonymousTransactionToSync; i++)
+                                                for (int i = ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalTransactionSync(); i < _currentWalletTransactionToSync; i++)
                                                 {
-                                                    CurrentWalletOnSyncTransaction = true;
-                                                    if (!await SendPacketToRemoteNode(ClassRemoteNodeCommandForWallet.RemoteNodeSendPacketEnumeration.WalletAskAnonymityTransactionPerId + "|" + walletObject.Value.GetWalletAnonymousUniqueId() + "|" + i))
+                                                    _currentWalletOnSyncTransaction = true;
+                                                    if (!await SendPacketToRemoteNode(ClassRemoteNodeCommandForWallet.RemoteNodeSendPacketEnumeration.WalletAskTransactionPerId + "|" + walletObject.Value.GetWalletUniqueId() + "|" + i))
                                                     {
-                                                        ConnectionStatus = false;
+                                                        _connectionStatus = false;
                                                         break;
                                                     }
-                                                    while (CurrentWalletOnSyncTransaction)
+                                                    while (_currentWalletOnSyncTransaction)
                                                     {
-                                                        if (!ConnectionStatus)
+                                                        if (!_connectionStatus)
                                                         {
                                                             break;
                                                         }
-                                                        Thread.Sleep(50);
+                                                        await Task.Delay(50);
+                                                    }
+
+                                                }
+                                            }
+                                        }
+                                        _currentWalletOnSyncTransaction = true;
+                                        if (await SendPacketToRemoteNode(ClassRemoteNodeCommandForWallet.RemoteNodeSendPacketEnumeration.WalletAskHisAnonymityNumberTransaction + "|" + walletObject.Value.GetWalletAnonymousUniqueId()))
+                                        {
+                                            while (_currentWalletOnSyncTransaction)
+                                            {
+                                                if (!_connectionStatus)
+                                                {
+                                                    break;
+                                                }
+                                                await Task.Delay(50);
+                                            }
+
+                                            if (_currentWalletAnonymousTransactionToSync > 0)
+                                            {
+                                                if (_currentWalletAnonymousTransactionToSync > ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalAnonymousTransactionSync()) // Start to sync transaction.
+                                                {
+                                                    for (int i = ClassRpcDatabase.RpcDatabaseContent[walletObject.Key].GetWalletTotalAnonymousTransactionSync(); i < _currentWalletAnonymousTransactionToSync; i++)
+                                                    {
+                                                        _currentWalletOnSyncTransaction = true;
+                                                        if (!await SendPacketToRemoteNode(ClassRemoteNodeCommandForWallet.RemoteNodeSendPacketEnumeration.WalletAskAnonymityTransactionPerId + "|" + walletObject.Value.GetWalletAnonymousUniqueId() + "|" + i))
+                                                        {
+                                                            _connectionStatus = false;
+                                                            break;
+                                                        }
+                                                        while (_currentWalletOnSyncTransaction)
+                                                        {
+                                                            if (!_connectionStatus)
+                                                            {
+                                                                break;
+                                                            }
+                                                            await Task.Delay(50);
+                                                        }
                                                     }
                                                 }
                                             }
+                                        }
+                                        else
+                                        {
+                                            _connectionStatus = false;
+                                            break;
                                         }
                                     }
                                     else
                                     {
-                                        ConnectionStatus = false;
+                                        _connectionStatus = false;
                                         break;
                                     }
-                                }
-                                else
-                                {
-                                    ConnectionStatus = false;
-                                    break;
-                                }
 
-                                #endregion
+                                    #endregion
+                                }
                             }
                         }
+                        catch (Exception error)
+                        {
+                            ClassConsole.ConsoleWriteLine("Exception: " + error.Message + " to send packet on Remote Node host " + ClassRpcSetting.RpcWalletRemoteNodeHost + ":" + ClassRpcSetting.RpcWalletRemoteNodePort + " retry to connect in a few seconds..", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
+                            break;
+                        }
+                        await Task.Delay(1000);
                     }
-                    catch (Exception error)
-                    {
-                        ClassConsole.ConsoleWriteLine("Exception: " + error.Message + " to send packet on Remote Node host " + ClassRpcSetting.RpcWalletRemoteNodeHost + ":" + ClassRpcSetting.RpcWalletRemoteNodePort + " retry to connect in a few seconds..", ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelRemoteNodeSync);
-                        break;
-                    }
-                    Thread.Sleep(1000);
-                }
-                ConnectionStatus = false;
-            });
-            ThreadAutoSync.Start();
+                    _connectionStatus = false;
+                }, _cancellationTokenAutoSync.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Catch the exception once the task is cancelled.
+            }
         }
     }
 }

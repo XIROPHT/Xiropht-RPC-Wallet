@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Text;
 using Xiropht_Connector_All.Setting;
 using Xiropht_Rpc_Wallet.ConsoleObject;
 using Xiropht_Rpc_Wallet.Utility;
@@ -67,9 +66,9 @@ namespace Xiropht_Rpc_Wallet.Setting
 
         public static string RpcWalletApiKeyRequestEncryption = string.Empty; // The key for encrypt request to receive/sent.
 
-        public static bool RpcWalletApiEnableXForwardedForResolver = false;
+        public static bool RpcWalletApiEnableXForwardedForResolver;
 
-        public static bool RpcWalletEnableRemoteNodeSync = false; // Enable remote node sync
+        public static bool RpcWalletEnableRemoteNodeSync; // Enable remote node sync
 
         public static string RpcWalletRemoteNodeHost = string.Empty; // Remote Node Host address
 

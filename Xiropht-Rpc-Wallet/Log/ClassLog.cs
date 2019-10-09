@@ -37,13 +37,13 @@ namespace Xiropht_Rpc_Wallet.Log
         private const string LogRemoteNodeSync = "\\Log\\rpc-remote-node-sync.log"; // 4
 
         /// <summary>
-        /// Streamwriter's 
+        /// Streamwriter objects
         /// </summary>
-        private static StreamWriter LogGeneralStreamWriter;
-        private static StreamWriter LogWalletUpdaterStreamWriter;
-        private static StreamWriter LogApiStreamWriter;
-        private static StreamWriter LogSyncStreamWriter;
-        private static StreamWriter LogRemoteNodeSyncStreamWriter;
+        private static StreamWriter _logGeneralStreamWriter;
+        private static StreamWriter _logWalletUpdaterStreamWriter;
+        private static StreamWriter _logApiStreamWriter;
+        private static StreamWriter _logSyncStreamWriter;
+        private static StreamWriter _logRemoteNodeSyncStreamWriter;
 
         /// <summary>
         /// Contains logs to write.
@@ -54,8 +54,8 @@ namespace Xiropht_Rpc_Wallet.Log
         /// Write log settings.
         /// </summary>
         private const int WriteLogBufferSize = 8192;
-        private static Thread ThreadAutoWriteLog;
-        private static long LastCleanLogDate;
+        private static CancellationTokenSource _cancellationTokenTaskWriteLog;
+        private static long _lastCleanLogDate;
 
         /// <summary>
         /// Log Initialization.
@@ -74,7 +74,7 @@ namespace Xiropht_Rpc_Wallet.Log
             }
             catch (Exception error)
             {
-                ClassConsole.ConsoleWriteLine("Failed to initialize log system, exception error: " + error.Message, ClassConsoleColorEnumeration.IndexConsoleRedLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
+                ClassConsole.ConsoleWriteLine("Failed to initialize log system, exception error: " + error.Message, ClassConsoleColorEnumeration.IndexConsoleRedLog);
                 return false;
             }
             return true;
@@ -129,18 +129,18 @@ namespace Xiropht_Rpc_Wallet.Log
         /// </summary>
         private static void LogInitizaliationStreamWriter()
         {
-            LogApiStreamWriter?.Close();
-            LogGeneralStreamWriter?.Close();
-            LogWalletUpdaterStreamWriter?.Close();
-            LogSyncStreamWriter?.Close();
-            LogRemoteNodeSyncStreamWriter?.Close();
+            _logApiStreamWriter?.Close();
+            _logGeneralStreamWriter?.Close();
+            _logWalletUpdaterStreamWriter?.Close();
+            _logSyncStreamWriter?.Close();
+            _logRemoteNodeSyncStreamWriter?.Close();
 
 
-            LogGeneralStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogGeneral), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogWalletUpdaterStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogApiStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogApi), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogRemoteNodeSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            _logGeneralStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogGeneral), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            _logWalletUpdaterStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            _logApiStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogApi), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            _logSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            _logRemoteNodeSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
 
         }
 
@@ -149,21 +149,21 @@ namespace Xiropht_Rpc_Wallet.Log
         /// </summary>
         private static void LogCleanUp()
         {
-            LogApiStreamWriter?.Close();
-            LogGeneralStreamWriter?.Close();
-            LogWalletUpdaterStreamWriter?.Close();
-            LogSyncStreamWriter?.Close();
-            LogRemoteNodeSyncStreamWriter?.Close();
+            _logApiStreamWriter?.Close();
+            _logGeneralStreamWriter?.Close();
+            _logWalletUpdaterStreamWriter?.Close();
+            _logSyncStreamWriter?.Close();
+            _logRemoteNodeSyncStreamWriter?.Close();
             File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogGeneral)).Close();
             File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater)).Close();
             File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogApi)).Close();
             File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogSync)).Close();
             File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync)).Close();
-            LogGeneralStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogGeneral), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogWalletUpdaterStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogApiStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogApi), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
-            LogRemoteNodeSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            _logGeneralStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogGeneral), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            _logWalletUpdaterStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogWalletUpdater), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            _logApiStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogApi), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            _logSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
+            _logRemoteNodeSyncStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + LogRemoteNodeSync), true, Encoding.UTF8, WriteLogBufferSize) { AutoFlush = true };
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace Xiropht_Rpc_Wallet.Log
             }
             catch
             {
-
+                // Ignored
             }
         }
 
@@ -188,63 +188,66 @@ namespace Xiropht_Rpc_Wallet.Log
         /// </summary>
         private static void AutoWriteLog()
         {
-            if (ThreadAutoWriteLog != null && (ThreadAutoWriteLog.IsAlive || ThreadAutoWriteLog != null))
+            _cancellationTokenTaskWriteLog = new CancellationTokenSource();
+
+            try
             {
-                ThreadAutoWriteLog.Abort();
-                GC.SuppressFinalize(ThreadAutoWriteLog);
-            }
-            ThreadAutoWriteLog = new Thread(async delegate ()
-            {
-                while (!Program.Exit)
+                Task.Factory.StartNew(async delegate ()
                 {
-                    try
-                    {
-                        if (ClassRpcSetting.WalletEnableAutoCleanLog)
-                        {
-                            if (LastCleanLogDate + ClassRpcSetting.WalletAutoCleanLogInterval < DateTimeOffset.Now.ToUnixTimeSeconds())
-                            {
-                                LastCleanLogDate = DateTimeOffset.Now.ToUnixTimeSeconds();
-                                ClassConsole.ConsoleWriteLine("AutoClean Logs started..", ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
-                                LogCleanUp();
-                                ClassConsole.ConsoleWriteLine("AutoClean Logs done.", ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelGeneral);
-                            }
-                        }
-                        if (ListOfLog.Count > 0)
-                        {
-                            if (ListOfLog.Count >= 100)
-                            {
-                                if (!LogInitializationFile()) // Remake log files if one of them missing, close and open again streamwriter's.
-                                {
-                                    LogInitizaliationStreamWriter();
-                                }
-                                var copyOfLog = new List<Tuple<int, string>>(ListOfLog);
-                                ListOfLog.Clear();
-                                if (copyOfLog.Count > 0)
-                                {
-                                    foreach (var log in copyOfLog)
-                                    {
-                                        await WriteLogAsync(log.Item2, log.Item1);
-                                    }
-                                }
-                                copyOfLog.Clear();
-                            }
-                        }
-                    }
-                    catch
+                    while (!Program.Exit)
                     {
                         try
                         {
-                            ListOfLog.Clear();
+                            if (ClassRpcSetting.WalletEnableAutoCleanLog)
+                            {
+                                if (_lastCleanLogDate + ClassRpcSetting.WalletAutoCleanLogInterval < DateTimeOffset.Now.ToUnixTimeSeconds())
+                                {
+                                    _lastCleanLogDate = DateTimeOffset.Now.ToUnixTimeSeconds();
+                                    ClassConsole.ConsoleWriteLine("AutoClean Logs started..", ClassConsoleColorEnumeration.IndexConsoleYellowLog);
+                                    LogCleanUp();
+                                    ClassConsole.ConsoleWriteLine("AutoClean Logs done.");
+                                }
+                            }
+                            if (ListOfLog.Count > 0)
+                            {
+                                if (ListOfLog.Count >= 100)
+                                {
+                                    if (!LogInitializationFile()) // Remake log files if one of them missing, close and open again streamwriter objects.
+                                {
+                                        LogInitizaliationStreamWriter();
+                                    }
+                                    var copyOfLog = new List<Tuple<int, string>>(ListOfLog);
+                                    ListOfLog.Clear();
+                                    if (copyOfLog.Count > 0)
+                                    {
+                                        foreach (var log in copyOfLog)
+                                        {
+                                            await WriteLogAsync(log.Item2, log.Item1);
+                                        }
+                                    }
+                                    copyOfLog.Clear();
+                                }
+                            }
                         }
                         catch
                         {
-                            LogInitialization(true);
+                            try
+                            {
+                                ListOfLog.Clear();
+                            }
+                            catch
+                            {
+                                LogInitialization(true);
+                            }
                         }
+                        await Task.Delay(10 * 1000);
                     }
-                    Thread.Sleep(10* 1000);
-                }
-            });
-            ThreadAutoWriteLog.Start();
+                }, _cancellationTokenTaskWriteLog.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Catch the exception once the Task is cancelled.
+            }
         }
 
         /// <summary>
@@ -257,19 +260,19 @@ namespace Xiropht_Rpc_Wallet.Log
             switch (idLog)
             {
                 case ClassLogEnumeration.LogIndexGeneral:
-                    await LogGeneralStreamWriter.WriteLineAsync(text);
+                    await _logGeneralStreamWriter.WriteLineAsync(text);
                     break;
                 case ClassLogEnumeration.LogIndexWalletUpdater:
-                    await LogWalletUpdaterStreamWriter.WriteLineAsync(text);
+                    await _logWalletUpdaterStreamWriter.WriteLineAsync(text);
                     break;
                 case ClassLogEnumeration.LogIndexApi:
-                    await LogApiStreamWriter.WriteLineAsync(text);
+                    await _logApiStreamWriter.WriteLineAsync(text);
                     break;
                 case ClassLogEnumeration.LogIndexSync:
-                    await LogApiStreamWriter.WriteLineAsync(text);
+                    await _logApiStreamWriter.WriteLineAsync(text);
                     break;
                 case ClassLogEnumeration.LogIndexRemoteNodeSync:
-                    await LogRemoteNodeSyncStreamWriter.WriteLineAsync(text);
+                    await _logRemoteNodeSyncStreamWriter.WriteLineAsync(text);
                     break;
             }
         }
@@ -279,22 +282,31 @@ namespace Xiropht_Rpc_Wallet.Log
         /// </summary>
         public static void StopLogSystem()
         {
-            if (ThreadAutoWriteLog != null && (ThreadAutoWriteLog.IsAlive || ThreadAutoWriteLog != null))
-            {
-                ThreadAutoWriteLog.Abort();
-                GC.SuppressFinalize(ThreadAutoWriteLog);
-            }
             try
             {
-                LogApiStreamWriter?.Close();
-                LogGeneralStreamWriter?.Close();
-                LogWalletUpdaterStreamWriter?.Close();
-                LogSyncStreamWriter?.Close();
-                LogRemoteNodeSyncStreamWriter?.Close();
+                if (_cancellationTokenTaskWriteLog != null)
+                {
+                    if (!_cancellationTokenTaskWriteLog.IsCancellationRequested)
+                    {
+                        _cancellationTokenTaskWriteLog.Cancel();
+                    }
+                }
             }
             catch
             {
-                
+                // Ignored
+            }
+            try
+            {
+                _logApiStreamWriter?.Close();
+                _logGeneralStreamWriter?.Close();
+                _logWalletUpdaterStreamWriter?.Close();
+                _logSyncStreamWriter?.Close();
+                _logRemoteNodeSyncStreamWriter?.Close();
+            }
+            catch
+            {
+                // Ignored
             }
         }
     }

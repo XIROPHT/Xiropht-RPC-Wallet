@@ -84,20 +84,25 @@ namespace Xiropht_Rpc_Wallet.Utility
         /// <summary>
         /// Get string between two strings.
         /// </summary>
-        /// <param name="STR"></param>
-        /// <param name="FirstString"></param>
-        /// <param name="LastString"></param>
+        /// <param name="str"></param>
+        /// <param name="firstString"></param>
+        /// <param name="lastString"></param>
         /// <returns></returns>
-        public static string GetStringBetween(string STR, string FirstString, string LastString)
+        public static string GetStringBetween(string str, string firstString, string lastString)
         {
             string FinalString;
-            int Pos1 = STR.IndexOf(FirstString) + FirstString.Length;
-            int Pos2 = STR.IndexOf(LastString);
-            FinalString = STR.Substring(Pos1, Pos2 - Pos1);
+            int Pos1 = str.IndexOf(firstString) + firstString.Length;
+            int Pos2 = str.IndexOf(lastString);
+            FinalString = str.Substring(Pos1, Pos2 - Pos1);
             return FinalString;
         }
 
-        public static string RemoveHTTPHeader(string packet)
+        /// <summary>
+        /// Remove the http header received.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <returns></returns>
+        public static string RemoveHttpHeader(string packet)
         {
             return GetStringBetween(packet, "{", "}");
         }

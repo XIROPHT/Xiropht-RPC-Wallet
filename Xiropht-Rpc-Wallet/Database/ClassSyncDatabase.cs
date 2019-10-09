@@ -19,9 +19,9 @@ namespace Xiropht_Rpc_Wallet.Database
     public class ClassSyncDatabase
     {
         private const string SyncDatabaseFile = "\\rpcsync.xirdb";
-        private static StreamWriter SyncDatabaseStreamWriter;
+        private static StreamWriter _syncDatabaseStreamWriter;
         public static bool InSave;
-        private static long TotalTransactionRead;
+        private static long _totalTransactionRead;
 
         public static Dictionary<string, long> DatabaseTransactionSync = new Dictionary<string, long>();
 
@@ -33,23 +33,21 @@ namespace Xiropht_Rpc_Wallet.Database
         {
             try
             {
-                if (!File.Exists(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile)))
+                if (!File.Exists(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile)))
                 {
-                    File.Create(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile)).Close();
+                    File.Create(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile)).Close();
                 }
                 else
                 {
-                    using (FileStream fs = File.Open(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (FileStream fs = File.Open(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
                         using (BufferedStream bs = new BufferedStream(fs))
                         {
                             using (StreamReader sr = new StreamReader(bs))
                             {
                                 string line;
-                                int lineRead = 0;
                                 while ((line = sr.ReadLine()) != null)
                                 {
-                                    lineRead++;
                                     if (line.Contains(ClassSyncDatabaseEnumeration.DatabaseSyncStartLine))
                                     {
                                         string transactionLine = line.Replace(ClassSyncDatabaseEnumeration.DatabaseSyncStartLine, "");
@@ -73,7 +71,7 @@ namespace Xiropht_Rpc_Wallet.Database
                                             {
                                                 DatabaseTransactionSync.Add(transaction, long.Parse(splitTransaction[7]));
                                             }
-                                            TotalTransactionRead++;
+                                            _totalTransactionRead++;
                                         }
                                     }
                                 }
@@ -86,8 +84,8 @@ namespace Xiropht_Rpc_Wallet.Database
             {
                 return false;
             }
-            SyncDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
-            ClassConsole.ConsoleWriteLine("Total transaction read from sync database: " + TotalTransactionRead, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelSyncDatabase);
+            _syncDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
+            ClassConsole.ConsoleWriteLine("Total transaction read from sync database: " + _totalTransactionRead, ClassConsoleColorEnumeration.IndexConsoleGreenLog, ClassConsoleLogLevelEnumeration.LogLevelSyncDatabase);
             return true;
         }
 
@@ -95,6 +93,7 @@ namespace Xiropht_Rpc_Wallet.Database
         /// Insert a new transaction to database.
         /// </summary>
         /// <param name="walletAddress"></param>
+        /// <param name="walletPublicKey"></param>
         /// <param name="transaction"></param>
         public static async void InsertTransactionToSyncDatabaseAsync(string walletAddress, string walletPublicKey, string transaction)
         {
@@ -114,15 +113,15 @@ namespace Xiropht_Rpc_Wallet.Database
                         }
                         transaction = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, transaction, walletAddress + walletPublicKey, ClassWalletNetworkSetting.KeySize);
                         string transactionLine = ClassSyncDatabaseEnumeration.DatabaseSyncStartLine + walletAddress + "|" + transaction;
-                        SyncDatabaseStreamWriter.WriteLine(transactionLine);
+                        _syncDatabaseStreamWriter.WriteLine(transactionLine);
                         success = true;
                     }
                     catch
                     {
-                        SyncDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(System.AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
+                        _syncDatabaseStreamWriter = new StreamWriter(ClassUtility.ConvertPath(AppDomain.CurrentDomain.BaseDirectory + SyncDatabaseFile), true, Encoding.UTF8, 8192) { AutoFlush = true };
                     }
                 }
-                TotalTransactionRead++;
+                _totalTransactionRead++;
                 ClassConsole.ConsoleWriteLine("Total transaction saved: " + DatabaseTransactionSync.Count);
                 InSave = false;
             }, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Current);

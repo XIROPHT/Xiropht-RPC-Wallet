@@ -13,6 +13,7 @@ namespace Xiropht_Rpc_Wallet.Remote
         /// <param name="transaction"></param>
         /// <param name="walletAddress"></param>
         /// <param name="walletPublicKey"></param>
+        /// <param name="anonymous"></param>
         /// <returns></returns>
         public static void SaveTransactionSorted(string transaction, string walletAddress, string walletPublicKey, bool anonymous)
         {
@@ -40,7 +41,7 @@ namespace Xiropht_Rpc_Wallet.Remote
                 string amountTransaction = splitDecryptedTransactionInformation[0];
                 string feeTransaction = splitDecryptedTransactionInformation[1];
                 string walletAddressDstOrSrc = splitDecryptedTransactionInformation[2];
-                string finalTransaction = string.Empty;
+                string finalTransaction;
                 if (anonymous)
                 {
                     finalTransaction = "anonymous#" + type + "#" + hashTransaction + "#" + walletAddressDstOrSrc + "#" + amountTransaction + "#" + feeTransaction + "#" + timestamp + "#" + timestampReceived + "#" + blockchainHeight;

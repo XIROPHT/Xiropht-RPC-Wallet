@@ -47,7 +47,7 @@ namespace Xiropht_Rpc_Wallet.Wallet
         /// <param name="privateKey"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        public string GenerateQRCodeKeyEncryptedRepresentation(string privateKey, string password)
+        public string GenerateQrCodeKeyEncryptedRepresentation(string privateKey, string password)
         {
             try
             {
@@ -65,10 +65,10 @@ namespace Xiropht_Rpc_Wallet.Wallet
                     Format = BarcodeFormat.QR_CODE
                 };
                 string sourceKey = privateKey.Trim() + "|" + password.Trim() + "|"+DateTimeOffset.Now.ToUnixTimeSeconds();
-                using (var representationQRCode = new Bitmap(qr.Write(sourceKey)))
+                using (var representationQrCode = new Bitmap(qr.Write(sourceKey)))
                 {
 
-                    LuminanceSource source = new BitmapLuminanceSource(representationQRCode);
+                    LuminanceSource source = new BitmapLuminanceSource(representationQrCode);
 
                     BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
                     Result result = new MultiFormatReader().decode(bitmap);
@@ -78,22 +78,22 @@ namespace Xiropht_Rpc_Wallet.Wallet
                         if (result.Text == sourceKey)
                         {
 
-                            string qrCodeString = BitmapToBase64String(representationQRCode);
-                            string QrCodeStringEncrypted = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, qrCodeString, privateKey, ClassWalletNetworkSetting.KeySize);
-                            string qrCodeEncryptedRequest = string.Empty;
+                            string qrCodeString = BitmapToBase64String(representationQrCode);
+                            string qrCodeStringEncrypted = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, qrCodeString, privateKey, ClassWalletNetworkSetting.KeySize);
+                            string qrCodeEncryptedRequest;
 
                             if (privateKey.Contains("$"))
                             {
                                 long walletUniqueIdInstance = long.Parse(privateKey.Split(new[] { "$" }, StringSplitOptions.None)[1]);
-                                qrCodeEncryptedRequest = walletUniqueIdInstance + "|" + QrCodeStringEncrypted;
+                                qrCodeEncryptedRequest = walletUniqueIdInstance + "|" + qrCodeStringEncrypted;
                             }
                             else
                             {
 
                                 string randomEndPrivateKey = privateKey.Remove(0, (privateKey.Length - ClassUtils.GetRandomBetween(privateKey.Length / 4, privateKey.Length / 8))); // Indicate only a small part of the end of the private key (For old private key users).
-                                qrCodeEncryptedRequest = randomEndPrivateKey + "|" + QrCodeStringEncrypted;
+                                qrCodeEncryptedRequest = randomEndPrivateKey + "|" + qrCodeStringEncrypted;
                             }
-                            string decryptQrCode = ClassAlgo.GetDecryptedResultManual(ClassAlgoEnumeration.Rijndael, QrCodeStringEncrypted, privateKey, ClassWalletNetworkSetting.KeySize);
+                            string decryptQrCode = ClassAlgo.GetDecryptedResultManual(ClassAlgoEnumeration.Rijndael, qrCodeStringEncrypted, privateKey, ClassWalletNetworkSetting.KeySize);
 
                             using (Bitmap qrCode = Base64StringToBitmap(decryptQrCode))
                             {
