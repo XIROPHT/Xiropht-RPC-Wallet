@@ -9,7 +9,6 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
         public const int IndexConsoleGreenLog = 0;
         public const int IndexConsoleYellowLog = 1;
         public const int IndexConsoleRedLog = 2;
-        public const int IndexConsoleWhiteLog = 3;
         public const int IndexConsoleBlueLog = 4;
         public const int IndexConsoleMagentaLog = 5;
     }
@@ -31,9 +30,8 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
         /// Log on the console.
         /// </summary>
         /// <param name="text"></param>
-        /// <param name="logId"></param>
+        /// <param name="colorId"></param>
         /// <param name="logLevel"></param>
-        /// <param name="writeLog"></param>
         public static void ConsoleWriteLine(string text, int colorId = 0, int logLevel = 0)
         {
             text = DateTime.Now + " - " + text;
@@ -56,7 +54,6 @@ namespace Xiropht_Rpc_Wallet.ConsoleObject
                     case ClassConsoleColorEnumeration.IndexConsoleMagentaLog:
                         Console.ForegroundColor = ConsoleColor.Magenta;
                         break;
-                    case ClassConsoleColorEnumeration.IndexConsoleWhiteLog:
                     default:
                         Console.ForegroundColor = ConsoleColor.White;
                         break;

@@ -40,7 +40,7 @@ namespace Xiropht_Rpc_Wallet.API
     public class ClassApiTaskScheduler
     {
         public static Dictionary<string, ClassApiTask> DictionaryApiTaskScheduled = new Dictionary<string, ClassApiTask>();
-        private static CancellationTokenSource TaskApiSchedulerCancellationSource;
+        private static CancellationTokenSource _taskApiSchedulerCancellationSource;
 
         private const int MaxInsertTaskScheduledTimeout = 10; // Attempt pending maximum 10 seconds to generate a unique hash of idenficiation of the task.
 
@@ -50,7 +50,7 @@ namespace Xiropht_Rpc_Wallet.API
         public static void StartApiTaskScheduler()
         {
             StopApiTaskScheduler();
-            TaskApiSchedulerCancellationSource = new CancellationTokenSource();
+            _taskApiSchedulerCancellationSource = new CancellationTokenSource();
             try
             {
                 Task.Factory.StartNew(async () =>
@@ -127,7 +127,7 @@ namespace Xiropht_Rpc_Wallet.API
                         }
                         await Task.Delay(1000);
                     }
-                }, TaskApiSchedulerCancellationSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
+                }, _taskApiSchedulerCancellationSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
             }
             catch(Exception error)
             {
@@ -145,12 +145,12 @@ namespace Xiropht_Rpc_Wallet.API
             {
                 try
                 {
-                    if (TaskApiSchedulerCancellationSource != null)
+                    if (_taskApiSchedulerCancellationSource != null)
                     {
-                        if (!TaskApiSchedulerCancellationSource.IsCancellationRequested)
+                        if (!_taskApiSchedulerCancellationSource.IsCancellationRequested)
                         {
-                            TaskApiSchedulerCancellationSource.Cancel();
-                            TaskApiSchedulerCancellationSource.Dispose();
+                            _taskApiSchedulerCancellationSource.Cancel();
+                            _taskApiSchedulerCancellationSource.Dispose();
                         }
                     }
                     errorStop = false;
@@ -177,11 +177,10 @@ namespace Xiropht_Rpc_Wallet.API
         {
             try
             {
-                string randomIdentificationHash = string.Empty;
+                string randomIdentificationHash;
                 long dateInsertEnd = DateTimeOffset.Now.ToUnixTimeSeconds() + MaxInsertTaskScheduledTimeout;
 
-                bool exist = true;
-                while (exist && dateInsertEnd >= DateTimeOffset.Now.ToUnixTimeSeconds())
+                while (dateInsertEnd >= DateTimeOffset.Now.ToUnixTimeSeconds())
                 {
                     if (DictionaryApiTaskScheduled.Count >= int.MaxValue - 1)
                     {
@@ -199,7 +198,6 @@ namespace Xiropht_Rpc_Wallet.API
                             startTaskScheduled = 0;
                         }
                         ClassConsole.ConsoleWriteLine("API Task Scheduler - insert a new task scheduled | Task Hash ID: " + randomIdentificationHash + " , Task Wallet Src: " + walletSrc + " , Task amount: " + amount + " , Task fee: " + fee + " , Task Anonymous: " + anonymous + " Task wallet dst: " + walletDst + " executed in " + startTaskScheduled + " second(s).", ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
-                        exist = false;
                         return new Tuple<bool, string>(true, randomIdentificationHash);
                     }
                 }

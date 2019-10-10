@@ -64,9 +64,9 @@ namespace Xiropht_Rpc_Wallet.API
     public class ClassApi
     {
 
-        private static bool ListenApiHttpConnectionStatus;
-        private static Thread ThreadListenApiHttpConnection;
-        private static TcpListener ListenerApiHttpConnection;
+        private static bool _listenApiHttpConnectionStatus;
+        private static CancellationTokenSource _cancellationTokenApiHttpConnection;
+        private static TcpListener _listenerApiHttpConnection;
         public const int MaxKeepAlive = 30;
 
         /// <summary>
@@ -74,45 +74,54 @@ namespace Xiropht_Rpc_Wallet.API
         /// </summary>
         public static void StartApiHttpServer()
         {
-            ListenApiHttpConnectionStatus = true;
+            _listenApiHttpConnectionStatus = true;
 
-            ListenerApiHttpConnection = new TcpListener(IPAddress.Parse(ClassRpcSetting.RpcWalletApiIpBind), ClassRpcSetting.RpcWalletApiPort);
+            _listenerApiHttpConnection = new TcpListener(IPAddress.Parse(ClassRpcSetting.RpcWalletApiIpBind), ClassRpcSetting.RpcWalletApiPort);
 
-            ListenerApiHttpConnection.Start();
-            ThreadListenApiHttpConnection = new Thread(async delegate ()
+            _listenerApiHttpConnection.Start();
+
+            _cancellationTokenApiHttpConnection = new CancellationTokenSource();
+
+            try
             {
-                while (ListenApiHttpConnectionStatus && !Program.Exit)
+                Task.Factory.StartNew(async delegate
                 {
-                    try
+                    while (_listenApiHttpConnectionStatus && !Program.Exit)
                     {
-                        await ListenerApiHttpConnection.AcceptTcpClientAsync().ContinueWith(async clientAsync =>
+                        try
                         {
-                            try
+                            await _listenerApiHttpConnection.AcceptTcpClientAsync().ContinueWith(async clientAsync =>
                             {
-                                var client = await clientAsync;
-                                CancellationTokenSource cancellationApi = new CancellationTokenSource();
-                                await Task.Factory.StartNew(async () =>
+                                try
                                 {
-                                    var ip = ((IPEndPoint)(client.Client.RemoteEndPoint)).Address.ToString();
-                                    using (var clientApiHttpObject = new ClassClientApiHttpObject(client, ip, cancellationApi))
+                                    var client = await clientAsync;
+                                    CancellationTokenSource cancellationApi = new CancellationTokenSource();
+                                    await Task.Factory.StartNew(async () =>
                                     {
-                                        await clientApiHttpObject.StartHandleClientHttpAsync();
-                                    }
-                                }, cancellationApi.Token, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current).ConfigureAwait(false);
-                            }
-                            catch
-                            {
+                                        var ip = ((IPEndPoint)(client.Client.RemoteEndPoint)).Address.ToString();
+                                        using (var clientApiHttpObject = new ClassClientApiHttpObject(client, ip, cancellationApi))
+                                        {
+                                            await clientApiHttpObject.StartHandleClientHttpAsync();
+                                        }
+                                    }, cancellationApi.Token, TaskCreationOptions.RunContinuationsAsynchronously, TaskScheduler.Current).ConfigureAwait(false);
+                                }
+                                catch
+                                {
+                                    // Ignored
+                                }
+                            });
+                        }
+                        catch
+                        {
 
-                            }
-                        });
+                        }
                     }
-                    catch
-                    {
-
-                    }
-                }
-            });
-            ThreadListenApiHttpConnection.Start();
+                }, _cancellationTokenApiHttpConnection.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Catch the exception once the task is cancelled.
+            }
         }
 
         /// <summary>
@@ -120,26 +129,28 @@ namespace Xiropht_Rpc_Wallet.API
         /// </summary>
         public static void StopApiHttpServer()
         {
-            ListenApiHttpConnectionStatus = false;
+            _listenApiHttpConnectionStatus = false;
             try
             {
-                if (ThreadListenApiHttpConnection != null && (ThreadListenApiHttpConnection.IsAlive || ThreadListenApiHttpConnection != null))
+                if (_cancellationTokenApiHttpConnection != null)
                 {
-                    ThreadListenApiHttpConnection.Abort();
-                    GC.SuppressFinalize(ThreadListenApiHttpConnection);
+                    if (!_cancellationTokenApiHttpConnection.IsCancellationRequested)
+                    {
+                        _cancellationTokenApiHttpConnection.Cancel();
+                    }
                 }
             }
             catch
             {
-
+                // Ignored
             }
             try
             {
-                ListenerApiHttpConnection.Stop();
+                _listenerApiHttpConnection.Stop();
             }
             catch
             {
-
+                // Ignored
             }
         }
     }
@@ -185,6 +196,7 @@ namespace Xiropht_Rpc_Wallet.API
         /// </summary>
         /// <param name="client"></param>
         /// <param name="ip"></param>
+        /// <param name="cancellationTokenSource"></param>
         public ClassClientApiHttpObject(TcpClient client, string ip, CancellationTokenSource cancellationTokenSource)
         {
             _clientStatus = true;
@@ -250,7 +262,7 @@ namespace Xiropht_Rpc_Wallet.API
                                             }
                                             catch
                                             {
-
+                                                // Ignored
                                             }
                                         }
                                         packet = ClassUtility.GetStringBetween(packet, "GET /", "HTTP");
@@ -268,12 +280,10 @@ namespace Xiropht_Rpc_Wallet.API
                                             ClassConsole.ConsoleWriteLine("HTTP API - decrypted packet received from IP: " + _ip + " - " + packet, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
                                         }
                                         await HandlePacketHttpAsync(packet);
-                                        break;
+
                                     }
-                                    else
-                                    {
-                                        break;
-                                    }
+
+                                    break;
                                 }
                             }
                         }
@@ -286,6 +296,7 @@ namespace Xiropht_Rpc_Wallet.API
                 }
                 catch
                 {
+                    // Ignored
                 }
             }
             CloseClientConnection();
@@ -299,24 +310,21 @@ namespace Xiropht_Rpc_Wallet.API
             var splitPacket = packet.Split(new[] { "\n" }, StringSplitOptions.None);
             foreach (var packetEach in splitPacket)
             {
-                if (packetEach != null)
+                if (!string.IsNullOrEmpty(packetEach))
                 {
-                    if (!string.IsNullOrEmpty(packetEach))
+                    if (packetEach.ToLower().Contains("x-forwarded-for: "))
                     {
-                        if (packetEach.ToLower().Contains("x-forwarded-for: "))
+                        _ip = packetEach.ToLower().Replace("x-forwarded-for: ", "");
+                        ClassConsole.ConsoleWriteLine("HTTP/HTTPS API - X-Forwarded-For ip of the client is: " + _ip, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
+                        if (ClassRpcSetting.RpcWalletApiIpWhitelist.Count > 0)
                         {
-                            _ip = packetEach.ToLower().Replace("x-forwarded-for: ", "");
-                            ClassConsole.ConsoleWriteLine("HTTP/HTTPS API - X-Forwarded-For ip of the client is: " + _ip, ClassConsoleColorEnumeration.IndexConsoleYellowLog, ClassConsoleLogLevelEnumeration.LogLevelApi);
-                            if (ClassRpcSetting.RpcWalletApiIpWhitelist.Count > 0)
+                            if (!ClassRpcSetting.RpcWalletApiIpWhitelist.Contains(_ip))
                             {
-                                if (!ClassRpcSetting.RpcWalletApiIpWhitelist.Contains(_ip))
-                                {
-                                    return false;
-                                }
+                                return false;
                             }
                         }
-
                     }
+
                 }
             }
 
@@ -336,7 +344,7 @@ namespace Xiropht_Rpc_Wallet.API
             }
             catch
             {
-
+                // Ignored
             }
             try
             {
@@ -348,7 +356,7 @@ namespace Xiropht_Rpc_Wallet.API
             }
             catch
             {
-
+                // Ignored
             }
         }
 
@@ -397,7 +405,6 @@ namespace Xiropht_Rpc_Wallet.API
                                     builder.AppendLine(@"" + data);
                                     await SendPacketAsync(builder.ToString());
                                     builder.Clear();
-                                    break;
                                 }
                                 else
                                 {
@@ -449,11 +456,9 @@ namespace Xiropht_Rpc_Wallet.API
                                             builder.Clear();
                                             break;
                                         }
-                                        else
-                                        {
-                                            await BuildAndSendHttpPacketAsync(ClassApiEnumeration.WalletBusyOnUpdate);
-                                            break;
-                                        }
+
+                                        await BuildAndSendHttpPacketAsync(ClassApiEnumeration.WalletBusyOnUpdate);
+                                        break;
                                     }
                                 }
                                 if (!found)
@@ -547,7 +552,7 @@ namespace Xiropht_Rpc_Wallet.API
                                         long totalTransactionIndex = 0;
                                         long totalTransactionTravel = 0;
 
-                                        Dictionary<string, ClassApiJsonTransaction> ListOfTransactionPerRange = new Dictionary<string, ClassApiJsonTransaction>();
+                                        Dictionary<string, ClassApiJsonTransaction> listOfTransactionPerRange = new Dictionary<string, ClassApiJsonTransaction>();
                                         foreach (var walletObject in ClassSyncDatabase.DatabaseTransactionSync.ToArray().OrderBy(value => value.Value))
                                         {
 
@@ -563,7 +568,7 @@ namespace Xiropht_Rpc_Wallet.API
                                                     {
 
                                                         var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
-                                                        if (!ListOfTransactionPerRange.ContainsKey(splitTransaction[2] + splitTransaction[9]))
+                                                        if (!listOfTransactionPerRange.ContainsKey(splitTransaction[2] + splitTransaction[9]))
                                                         {
 
                                                             var transactionJsonObject = new ClassApiJsonTransaction()
@@ -581,17 +586,17 @@ namespace Xiropht_Rpc_Wallet.API
                                                                 blockchain_height = splitTransaction[8]
                                                             };
 
-                                                            ListOfTransactionPerRange.Add(splitTransaction[2] + splitTransaction[9], transactionJsonObject);
+                                                            listOfTransactionPerRange.Add(splitTransaction[2] + splitTransaction[9], transactionJsonObject);
                                                         }
                                                     }
                                                 }
                                             }
                                         }
                                         
-                                        if (ListOfTransactionPerRange.Count > 0)
+                                        if (listOfTransactionPerRange.Count > 0)
                                         {
 
-                                            string data = JsonConvert.SerializeObject(ListOfTransactionPerRange.Values.ToArray());
+                                            string data = JsonConvert.SerializeObject(listOfTransactionPerRange.Values.ToArray());
                                             if (ClassRpcSetting.RpcWalletApiKeyRequestEncryption != string.Empty)
                                             {
                                                 data = ClassAlgo.GetEncryptedResultManual(ClassAlgoEnumeration.Rijndael, data, ClassRpcSetting.RpcWalletApiKeyRequestEncryption, ClassWalletNetworkSetting.KeySize);
@@ -605,8 +610,8 @@ namespace Xiropht_Rpc_Wallet.API
                                             builder.AppendLine(@"" + data);
                                             await SendPacketAsync(builder.ToString());
                                             builder.Clear();
-                                            data = string.Empty;
-                                            ListOfTransactionPerRange.Clear();
+                                            GC.SuppressFinalize(data);
+                                            listOfTransactionPerRange.Clear();
                                         }
                                         else
                                         {
@@ -846,7 +851,7 @@ namespace Xiropht_Rpc_Wallet.API
                                     if (ClassApiTaskScheduler.DictionaryApiTaskScheduled.ContainsKey(splitPacket[1]))
                                     {
                                         var taskObject = ClassApiTaskScheduler.DictionaryApiTaskScheduled[splitPacket[1]];
-                                        string data = string.Empty;
+                                        string data;
                                         if (!string.IsNullOrEmpty(taskObject.TaskResult))
                                         {
                                             var taskContentJsonObject = new ClassApiJsonTaskContent()
@@ -1319,8 +1324,8 @@ namespace Xiropht_Rpc_Wallet.API
                 }
                 else
                 {
-                    string data = string.Empty;
-                    StringBuilder builder = new StringBuilder();
+                    string data;
+                    StringBuilder builder;
                     switch (packet)
                     {
                         case ClassApiEnumeration.ClearTask:
@@ -1453,10 +1458,12 @@ namespace Xiropht_Rpc_Wallet.API
         /// build and send http packet to client.
         /// </summary>
         /// <param name="content"></param>
+        /// <param name="multiResult"></param>
+        /// <param name="dictionaryContent"></param>
         /// <returns></returns>
         private async Task BuildAndSendHttpPacketAsync(string content, bool multiResult = false, Dictionary<string, string> dictionaryContent = null)
         {
-            string contentToSend = string.Empty;
+            string contentToSend;
             if (!multiResult)
             {
                 contentToSend = BuildJsonString(content);
@@ -1478,7 +1485,6 @@ namespace Xiropht_Rpc_Wallet.API
             builder.AppendLine(@"" + contentToSend);
             await SendPacketAsync(builder.ToString());
             builder.Clear();
-            contentToSend = string.Empty;
         }
 
         /// <summary>
@@ -1500,7 +1506,7 @@ namespace Xiropht_Rpc_Wallet.API
         /// <summary>
         /// Return content converted for json.
         /// </summary>
-        /// <param name="content"></param>
+        /// <param name="dictionaryContent"></param>
         /// <returns></returns>
         private string BuildFullJsonString(Dictionary<string, string> dictionaryContent)
         {
@@ -1512,23 +1518,6 @@ namespace Xiropht_Rpc_Wallet.API
             jsonContent.Add("version", Assembly.GetExecutingAssembly().GetName().Version.ToString());
             jsonContent.Add("date_packet", DateTimeOffset.Now.ToUnixTimeSeconds());
             return JsonConvert.SerializeObject(jsonContent);
-        }
-
-        /// <summary>
-        /// Return json object content converted for json.
-        /// </summary>
-        /// <param name="content"></param>
-        /// <returns></returns>
-        private JObject BuildFullJsonObject(Dictionary<string, string> dictionaryContent)
-        {
-            JObject jsonContent = new JObject();
-            foreach (var content in dictionaryContent)
-            {
-                jsonContent.Add(content.Key, content.Value);
-            }
-            jsonContent.Add("version", Assembly.GetExecutingAssembly().GetName().Version.ToString());
-            jsonContent.Add("date_packet", DateTimeOffset.Now.ToUnixTimeSeconds());
-            return jsonContent;
         }
 
         /// <summary>
@@ -1553,6 +1542,7 @@ namespace Xiropht_Rpc_Wallet.API
             }
             catch
             {
+                // Ignored
             }
         }
     }
