@@ -14,6 +14,8 @@ namespace Xiropht_Rpc_Wallet.Database
     public class ClassSyncDatabaseEnumeration
     {
         public const string DatabaseSyncStartLine = "[TRANSACTION]";
+        public const string DatabaseAnonymousTransactionMode = "anonymous";
+        public const string DatabaseAnonymousTransactionType = "ANONYMOUS";
     }
 
     public class ClassSyncDatabase
@@ -59,7 +61,7 @@ namespace Xiropht_Rpc_Wallet.Database
                                             transaction += "#" + walletAddress;
 
                                             var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
-                                            if (splitTransaction[0] == "anonymous")
+                                            if (splitTransaction[0] == ClassSyncDatabaseEnumeration.DatabaseAnonymousTransactionMode)
                                             {
                                                 ClassRpcDatabase.RpcDatabaseContent[walletAddress].InsertWalletTransactionSync(transaction, true, false);
                                             }

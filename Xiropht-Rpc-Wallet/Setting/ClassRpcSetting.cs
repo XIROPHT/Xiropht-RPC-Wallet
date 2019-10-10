@@ -50,6 +50,7 @@ namespace Xiropht_Rpc_Wallet.Setting
         public bool wallet_enable_auto_clean_log;
         public int wallet_auto_clean_log_interval;
         public bool rpc_wallet_enable_api_task_scheduler;
+        public bool enable_european_exchange_rule;
     }
 
     public class ClassRpcSetting
@@ -94,6 +95,7 @@ namespace Xiropht_Rpc_Wallet.Setting
 
         public static bool RpcWalletEnableApiTaskScheduler = false;
 
+        public static bool RpcWalletEnableEuropeanExchangeRule;
 
         /// <summary>
         /// Initialize setting of RPC Wallet
@@ -122,7 +124,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                                 }
                             }
                         }
-                        if (!jsonContent.Contains("rpc_wallet_enable_api_task_scheduler"))
+                        if (!jsonContent.Contains("rpc_wallet_enable_api_task_scheduler") || !jsonContent.Contains("enable_european_exchange_rule"))
                         {
                             needUpdate = true;
                         }
@@ -185,7 +187,7 @@ namespace Xiropht_Rpc_Wallet.Setting
                             WalletEnableAutoCleanLog = jsonRpcWalletSettingObject.wallet_enable_auto_clean_log;
                             WalletAutoCleanLogInterval = jsonRpcWalletSettingObject.wallet_auto_clean_log_interval;
                             RpcWalletEnableApiTaskScheduler = jsonRpcWalletSettingObject.rpc_wallet_enable_api_task_scheduler;
-
+                            RpcWalletEnableEuropeanExchangeRule = jsonRpcWalletSettingObject.enable_european_exchange_rule;
                             if (error)
                             {
                                 ClassConsole.ConsoleWriteLine("Configuration file of RPC Wallet seems to contain some errors, do you want to continue? [Y/N]", ClassConsoleColorEnumeration.IndexConsoleRedLog);

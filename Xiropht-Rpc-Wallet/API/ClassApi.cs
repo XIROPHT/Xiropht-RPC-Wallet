@@ -68,7 +68,7 @@ namespace Xiropht_Rpc_Wallet.API
         private static CancellationTokenSource _cancellationTokenApiHttpConnection;
         private static TcpListener _listenerApiHttpConnection;
         public const int MaxKeepAlive = 30;
-
+       
         /// <summary>
         /// Enable http/https api of the remote node, listen incoming connection throught web client.
         /// </summary>
@@ -556,37 +556,52 @@ namespace Xiropht_Rpc_Wallet.API
                                         foreach (var walletObject in ClassSyncDatabase.DatabaseTransactionSync.ToArray().OrderBy(value => value.Value))
                                         {
 
-                                            totalTransactionIndex++;
+                                            string transaction = walletObject.Key;
 
-                                            if (totalTransactionTravel <= endIndex)
+                                            if (transaction != null)
                                             {
-                                                totalTransactionTravel++;
-                                                if (totalTransactionTravel >= startIndex && totalTransactionTravel <= endIndex)
+
+                                                var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
+
+                                                bool transactionIgnored = false;
+
+                                                if (ClassRpcSetting.RpcWalletEnableEuropeanExchangeRule)
                                                 {
-                                                    string transaction = walletObject.Key;
-                                                    if (transaction != null)
+                                                    if (splitTransaction[0] == ClassSyncDatabaseEnumeration.DatabaseAnonymousTransactionMode || splitTransaction[3] == ClassSyncDatabaseEnumeration.DatabaseAnonymousTransactionType)
                                                     {
+                                                        transactionIgnored = true;
+                                                    }
+                                                }
 
-                                                        var splitTransaction = transaction.Split(new[] { "#" }, StringSplitOptions.None);
-                                                        if (!listOfTransactionPerRange.ContainsKey(splitTransaction[2] + splitTransaction[9]))
+                                                if (!transactionIgnored)
+                                                {
+                                                    totalTransactionIndex++;
+
+                                                    if (totalTransactionTravel <= endIndex)
+                                                    {
+                                                        totalTransactionTravel++;
+                                                        if (totalTransactionTravel >= startIndex && totalTransactionTravel <= endIndex)
                                                         {
-
-                                                            var transactionJsonObject = new ClassApiJsonTransaction()
+                                                            if (!listOfTransactionPerRange.ContainsKey(splitTransaction[2] + splitTransaction[9]))
                                                             {
-                                                                index = totalTransactionIndex,
-                                                                wallet_address = splitTransaction[9],
-                                                                mode = splitTransaction[0],
-                                                                type = splitTransaction[1],
-                                                                hash = splitTransaction[2],
-                                                                wallet_dst_or_src = splitTransaction[3],
-                                                                amount = decimal.Parse(splitTransaction[4], NumberStyles.Currency, Program.GlobalCultureInfo),
-                                                                fee = decimal.Parse(splitTransaction[5], NumberStyles.Currency, Program.GlobalCultureInfo),
-                                                                timestamp_send = long.Parse(splitTransaction[6]),
-                                                                timestamp_recv = long.Parse(splitTransaction[7]),
-                                                                blockchain_height = splitTransaction[8]
-                                                            };
 
-                                                            listOfTransactionPerRange.Add(splitTransaction[2] + splitTransaction[9], transactionJsonObject);
+                                                                var transactionJsonObject = new ClassApiJsonTransaction()
+                                                                {
+                                                                    index = totalTransactionIndex,
+                                                                    wallet_address = splitTransaction[9],
+                                                                    mode = splitTransaction[0],
+                                                                    type = splitTransaction[1],
+                                                                    hash = splitTransaction[2],
+                                                                    wallet_dst_or_src = splitTransaction[3],
+                                                                    amount = decimal.Parse(splitTransaction[4], NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                                    fee = decimal.Parse(splitTransaction[5], NumberStyles.Currency, Program.GlobalCultureInfo),
+                                                                    timestamp_send = long.Parse(splitTransaction[6]),
+                                                                    timestamp_recv = long.Parse(splitTransaction[7]),
+                                                                    blockchain_height = splitTransaction[8]
+                                                                };
+
+                                                                listOfTransactionPerRange.Add(splitTransaction[2] + splitTransaction[9], transactionJsonObject);
+                                                            }
                                                         }
                                                     }
                                                 }
